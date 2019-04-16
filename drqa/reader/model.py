@@ -281,8 +281,8 @@ class DocReader(object):
                       Variable(e.cuda(async=True), volatile=True)
                       for e in ex[:5]]
         else:
-            inputs = [e if e is None else Variable(e, volatile=True)
-                      for e in ex[:5]]
+            with torch.no_grad():
+                inputs = [e if e is None else Variable(e) for e in ex[:5]]
 
         # Run forward
         score_s, score_e = self.network(*inputs)
