@@ -14,7 +14,7 @@ if sys.version_info < (3, 5):
 
 DATA_DIR = (
     os.getenv('DRQA_DATA') or
-    os.path.join(PosixPath(__file__).absolute().parents[1].as_posix(), 'data')
+    os.path.join(os.getcwd(), 'data')
 )
 
 from . import tokenizers
