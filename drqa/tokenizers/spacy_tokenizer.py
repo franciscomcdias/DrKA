@@ -22,7 +22,7 @@ class SpacyTokenizer(Tokenizer):
             annotators: set that can include pos, lemma, and ner.
             model: spaCy model to use (either path, or keyword like 'en').
         """
-        model = kwargs.get('model', 'en')
+        model = kwargs.get('model', 'en_core_web_sm')
         self.annotators = copy.deepcopy(kwargs.get('annotators', set()))
         nlp_kwargs = {'parser': False}
         if not any([p in self.annotators for p in ['lemma', 'pos', 'ner']]):
