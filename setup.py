@@ -8,13 +8,13 @@
 from setuptools import setup, find_packages
 import sys
 
-with open('README.md') as f:
+with open('README.md', errors='ignore') as f:
     readme = f.read()
 
-with open('LICENSE') as f:
+with open('LICENSE', errors='ignore') as f:
     license = f.read()
 
-with open('requirements.txt') as f:
+with open('requirements.txt', errors='ignore') as f:
     reqs = f.read()
 
 setup(
