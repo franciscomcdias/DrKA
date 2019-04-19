@@ -36,7 +36,7 @@ parser.add_argument('--out-dir', type=str, default='/tmp',
                           '(<dataset>-<model>.preds)'))
 parser.add_argument('--tokenizer', type=str, default=None,
                     help=("String option specifying tokenizer type to use "
-                          "(e.g. 'corenlp')"))
+                          "(e.g. 'spacy')"))
 parser.add_argument('--num-workers', type=int, default=None,
                     help='Number of CPU processes (for tokenizing, etc)')
 parser.add_argument('--no-cuda', action='store_true',

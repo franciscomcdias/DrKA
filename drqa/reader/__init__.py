@@ -6,12 +6,12 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
-from ..tokenizers import CoreNLPTokenizer
+from ..tokenizers import SpacyTokenizer
 from .. import DATA_DIR
 
 
 DEFAULTS = {
-    'tokenizer': CoreNLPTokenizer,
+    'tokenizer': SpacyTokenizer,
     'model': os.path.join(DATA_DIR, 'reader/single.mdl'),
 }
 

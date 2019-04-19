@@ -173,7 +173,7 @@ if __name__ == '__main__':
                         help='Number of buckets to use for hashing ngrams')
     parser.add_argument('--tokenizer', type=str, default='simple',
                         help=("String option specifying tokenizer type to use "
-                              "(e.g. 'corenlp')"))
+                              "(e.g. 'spacy')"))
     parser.add_argument('--num-workers', type=int, default=None,
                         help='Number of CPU processes (for tokenizing, etc)')
     args = parser.parse_args()

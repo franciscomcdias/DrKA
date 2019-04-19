@@ -47,7 +47,7 @@ parser.add_argument('--top-n', type=int, default=1,
                     help="Number of predictions to make per query")
 parser.add_argument('--tokenizer', type=str, default=None,
                     help=("String option specifying tokenizer type to use "
-                          "(e.g. 'corenlp')"))
+                          "(e.g. 'spacy')"))
 parser.add_argument('--no-cuda', action='store_true',
                     help="Use CPU only")
 parser.add_argument('--gpu', type=int, default=-1,

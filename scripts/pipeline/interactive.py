@@ -32,7 +32,7 @@ parser.add_argument('--doc-db', type=str, default=None,
                     help='Path to Document DB')
 parser.add_argument('--tokenizer', type=str, default=None,
                     help=("String option specifying tokenizer type to "
-                          "use (e.g. 'corenlp')"))
+                          "use (e.g. 'spacy')"))
 parser.add_argument('--candidate-file', type=str, default=None,
                     help=("List of candidates to restrict predictions to, "
                           "one candidate per line"))
