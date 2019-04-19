@@ -19,7 +19,7 @@ with open('requirements.txt', errors='ignore') as f:
 
 setup(
     name='drqa',
-    version='0.1.0',
+    version='0.1.0-fdias.1',
     description='Reading Wikipedia to Answer Open-Domain Questions',
     long_description=readme,
     license=license,
