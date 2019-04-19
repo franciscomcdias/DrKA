@@ -4,4 +4,9 @@
 data/
 *.tar.gz
 *.egg-info
+.idea
 scripts/reader/official_eval.py
+
+*.npz
+*.db
+*.mdl
