@@ -211,7 +211,12 @@ class DrKA(object):
         # We remove duplicates for processing efficiency.
         flat_docids = list({d for docids in all_docids for d in docids})
         did2didx = {did: didx for didx, did in enumerate(flat_docids)}
-        doc_texts = self.processes.map(fetch_text, flat_docids)
+
+        if self.ranker.name == "elastic":
+            # HACK, as cannot pickle thread-locked objects
+            doc_texts = [self.ranker.get_doc_text(flat_docid) for flat_docid in flat_docids]
+        else:
+            doc_texts = self.processes.map(fetch_text, flat_docids)
 
         # Split and flatten documents. Maintain a mapping from doc (index in
         # flat list) to split (index in flat list).

@@ -43,6 +43,7 @@ class ElasticDocRanker(object):
         self.elastic_field_doc_name = elastic_field_doc_name
         self.elastic_field_content = elastic_field_content
         self.strict = strict
+        self.name = "elastic"
 
     # Elastic Ranker
 
@@ -70,6 +71,7 @@ class ElasticDocRanker(object):
                 'type': 'most_fields',
                 'fields': self.elastic_fields}}})
         hits = results['hits']['hits']
+
         doc_ids = [utils.get_field(row['_source'], self.elastic_field_doc_name) for row in hits]
         doc_scores = [row['_score'] for row in hits]
         return doc_ids, doc_scores

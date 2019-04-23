@@ -43,6 +43,7 @@ class TfidfDocRanker(object):
         self.doc_dict = metadata['doc_dict']
         self.num_docs = len(self.doc_dict[0])
         self.strict = strict
+        self.name = "tfidf"
 
     def get_doc_index(self, doc_id):
         """Convert doc_id --> doc_index"""
