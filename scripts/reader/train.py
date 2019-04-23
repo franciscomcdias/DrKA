@@ -7,21 +7,20 @@
 """Main DrQA reader training script."""
 
 import argparse
-import torch
-import numpy as np
 import json
-import os
-import sys
-import subprocess
 import logging
+import os
+import subprocess
+import sys
 
+import numpy as np
+import torch
 
-from drqa.reader import utils, vector, config, data
-from drqa.reader import DocReader
-from drqa import DATA_DIR as DRQA_DATA
+from drka import DATA_DIR as DRQA_DATA
+from drka.reader import DocReader
+from drka.reader import utils, vector, config, data
 
 logger = logging.getLogger()
-
 
 # ------------------------------------------------------------------------------
 # Training arguments.
@@ -32,6 +31,7 @@ logger = logging.getLogger()
 DATA_DIR = os.path.join(DRQA_DATA, 'datasets')
 MODEL_DIR = '/tmp/drqa-models/'
 EMBED_DIR = os.path.join(DRQA_DATA, 'embeddings')
+
 
 def str2bool(v):
     return v.lower() in ('yes', 'true', 't', '1', 'y')

@@ -359,7 +359,7 @@ class DocReader(object):
 
             if not cands:
                 # try getting from globals? (multiprocessing in pipeline mode)
-                from ..pipeline.drqa import PROCESS_CANDS
+                from ..pipeline.drka import PROCESS_CANDS
                 cands = PROCESS_CANDS
             if not cands:
                 raise RuntimeError('No candidates given.')

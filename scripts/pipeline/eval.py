@@ -8,12 +8,13 @@
 
 import argparse
 import json
-from drqa.retriever.utils import normalize
-from drqa.reader.utils import (
+
+from drka.reader.utils import (
     exact_match_score,
     regex_match_score,
     metric_max_over_ground_truths
 )
+from drka.retriever.utils import normalize
 
 
 def evaluate(dataset_file, prediction_file, regex=False):

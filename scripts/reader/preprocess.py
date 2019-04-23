@@ -7,15 +7,15 @@
 """Preprocess the SQuAD dataset for training."""
 
 import argparse
+import json
 import os
 import sys
-import json
 import time
-
+from functools import partial
 from multiprocessing import Pool
 from multiprocessing.util import Finalize
-from functools import partial
-from drqa import tokenizers
+
+from drka import tokenizers
 
 # ------------------------------------------------------------------------------
 # Tokenize + annotate.
@@ -71,8 +71,8 @@ def find_answer(offsets, begin_offset, end_offset):
     """Match token offsets with the char begin/end offsets of the answer."""
     start = [i for i, tok in enumerate(offsets) if tok[0] == begin_offset]
     end = [i for i, tok in enumerate(offsets) if tok[1] == end_offset]
-    assert(len(start) <= 1)
-    assert(len(end) <= 1)
+    assert (len(start) <= 1)
+    assert (len(end) <= 1)
     if len(start) == 1 and len(end) == 1:
         return start[0], end[0]
 

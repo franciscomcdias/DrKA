@@ -6,15 +6,16 @@
 # LICENSE file in the root directory of this source tree.
 """Interactive interface to full DrQA pipeline."""
 
-import torch
 import argparse
 import code
-import prettytable
 import logging
 
+import prettytable
+import torch
 from termcolor import colored
-from drqa import pipeline
-from drqa.retriever import utils
+
+from drka import pipeline
+from drka.retriever import utils
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -61,7 +62,7 @@ else:
     candidates = None
 
 logger.info('Initializing pipeline...')
-DrQA = pipeline.DrQA(
+DrQA = pipeline.DrKA(
     cuda=args.cuda,
     fixed_candidates=candidates,
     reader_model=args.reader_model,

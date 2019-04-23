@@ -6,16 +6,16 @@
 # LICENSE file in the root directory of this source tree.
 """Run predictions using the full DrQA retriever-reader pipeline."""
 
-import torch
+import argparse
+import json
+import logging
 import os
 import time
-import json
-import argparse
-import logging
 
-from drqa import pipeline
-from drqa.retriever import utils
+import torch
 
+from drka import pipeline
+from drka.retriever import utils
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -82,7 +82,7 @@ else:
     candidates = None
 
 logger.info('Initializing pipeline...')
-DrQA = pipeline.DrQA(
+DrQA = pipeline.DrKA(
     reader_model=args.reader_model,
     fixed_candidates=candidates,
     embedding_file=args.embedding_file,
@@ -95,7 +95,6 @@ DrQA = pipeline.DrQA(
     db_config={'options': {'db_path': args.doc_db}},
     num_workers=args.num_workers,
 )
-
 
 # ------------------------------------------------------------------------------
 # Read in dataset and make predictions

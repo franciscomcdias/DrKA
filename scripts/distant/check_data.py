@@ -8,6 +8,7 @@
 
 import argparse
 import json
+
 from termcolor import colored
 
 parser = argparse.ArgumentParser()

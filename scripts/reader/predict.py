@@ -6,15 +6,16 @@
 # LICENSE file in the root directory of this source tree.
 """A script to make and save model predictions on an input dataset."""
 
+import argparse
+import json
+import logging
 import os
 import time
-import torch
-import argparse
-import logging
-import json
 
+import torch
 from tqdm import tqdm
-from drqa.reader import Predictor
+
+from drka.reader import Predictor
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -67,7 +68,6 @@ predictor = Predictor(
 )
 if args.cuda:
     predictor.cuda()
-
 
 # ------------------------------------------------------------------------------
 # Read in dataset and make predictions.

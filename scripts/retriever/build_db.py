@@ -7,15 +7,16 @@
 """A script to read in and store documents in a sqlite database."""
 
 import argparse
-import sqlite3
-import json
-import os
-import logging
 import importlib.util
-
+import json
+import logging
+import os
+import sqlite3
 from multiprocessing import Pool as ProcessPool
+
 from tqdm import tqdm
-from drqa.retriever import utils
+
+from drka.retriever import utils
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -23,7 +24,6 @@ fmt = logging.Formatter('%(asctime)s: [ %(message)s ]', '%m/%d/%Y %I:%M:%S %p')
 console = logging.StreamHandler()
 console.setFormatter(fmt)
 logger.addHandler(console)
-
 
 # ------------------------------------------------------------------------------
 # Import helper

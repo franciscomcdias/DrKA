@@ -6,14 +6,15 @@
 # LICENSE file in the root directory of this source tree.
 """A script to run the DrQA reader model interactively."""
 
-import torch
-import code
 import argparse
+import code
 import logging
-import prettytable
 import time
 
-from drqa.reader import Predictor
+import prettytable
+import torch
+
+from drka.reader import Predictor
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -21,7 +22,6 @@ fmt = logging.Formatter('%(asctime)s: [ %(message)s ]', '%m/%d/%Y %I:%M:%S %p')
 console = logging.StreamHandler()
 console.setFormatter(fmt)
 logger.addHandler(console)
-
 
 # ------------------------------------------------------------------------------
 # Commandline arguments & init

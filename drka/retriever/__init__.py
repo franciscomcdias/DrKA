@@ -6,6 +6,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
+
 from .. import DATA_DIR
 
 DEFAULTS = {
@@ -26,9 +27,9 @@ def set_default(key, value):
 def get_class(name):
     if name == 'tfidf':
         return TfidfDocRanker
-    if name == 'sqlite':
+    if name == 'sql':
         return DocDB
-    if name == 'elasticsearch':
+    if name == 'elastic':
         return ElasticDocRanker
     raise RuntimeError('Invalid retriever class: %s' % name)
 

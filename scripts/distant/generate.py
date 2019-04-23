@@ -11,26 +11,25 @@ that can be used as a supporting context.
 """
 
 import argparse
-import uuid
 import heapq
-import logging
-import regex as re
-import os
 import json
+import logging
+import os
 import random
-
-from functools import partial
+import uuid
 from collections import Counter
+from functools import partial
 from multiprocessing import Pool, cpu_count
 from multiprocessing.util import Finalize
 
-from nltk.tokenize import word_tokenize
+import regex as re
 from nltk.chunk import ne_chunk
 from nltk.tag import pos_tag
+from nltk.tokenize import word_tokenize
 
-from drqa import tokenizers
-from drqa import retriever
-from drqa.retriever import utils
+from drka import retriever
+from drka import tokenizers
+from drka.retriever import utils
 
 logger = logging.getLogger()
 

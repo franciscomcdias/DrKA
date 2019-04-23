@@ -6,20 +6,20 @@
 # LICENSE file in the root directory of this source tree.
 """A script to build the tf-idf document matrices for retrieval."""
 
-import numpy as np
-import scipy.sparse as sp
 import argparse
-import os
-import math
 import logging
-
+import math
+import os
+from collections import Counter
+from functools import partial
 from multiprocessing import Pool as ProcessPool
 from multiprocessing.util import Finalize
-from functools import partial
-from collections import Counter
 
-from drqa import retriever
-from drqa import tokenizers
+import numpy as np
+import scipy.sparse as sp
+
+from drka import retriever
+from drka import tokenizers
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -27,7 +27,6 @@ fmt = logging.Formatter('%(asctime)s: [ %(message)s ]', '%m/%d/%Y %I:%M:%S %p')
 console = logging.StreamHandler()
 console.setFormatter(fmt)
 logger.addHandler(console)
-
 
 # ------------------------------------------------------------------------------
 # Multiprocessing functions

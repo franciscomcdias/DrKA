@@ -58,7 +58,7 @@ def tokenize_text(text):
 # ------------------------------------------------------------------------------
 
 
-class DrQA(object):
+class DrKA(object):
     # Target size for squashing short paragraphs together.
     # 0 = read every paragraph independently
     # infty = read all paragraphs together
@@ -129,7 +129,7 @@ class DrQA(object):
         tok_opts = {'annotators': annotators}
 
         # ElasticSearch is also used as backend if used as ranker
-        if hasattr(self.ranker, 'es'):
+        if hasattr(self.ranker, 'elastic'):
             db_config = ranker_config
             db_class = ranker_class
             db_opts = ranker_opts

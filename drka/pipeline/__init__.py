@@ -24,4 +24,4 @@ def set_default(key, value):
     DEFAULTS[key] = value
 
 
-from .drqa import DrQA
+from .drka import DrKA

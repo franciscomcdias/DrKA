@@ -1,4 +1,7 @@
-# DrQA
+# DrKA
+
+My version of the Document Reader Q&A, with small improvements used in my projects.
+
 This is a PyTorch implementation of the DrQA system described in the ACL 2017 paper [Reading Wikipedia to Answer Open-Domain Questions](https://arxiv.org/abs/1704.00051).
 
 ## Quick Links
@@ -371,7 +374,7 @@ Available tokenizers:
 - _RegexpTokenizer_: Custom regex-based PTB-style tokenizer (option: 'regexp').
 - _SimpleTokenizer_: Basic alpha-numeric/non-whitespace tokenizer (option: 'simple').
 
-See the [list](drqa/tokenizers/__init__.py) of mappings between string option names and tokenizer classes.
+See the [list](drka/tokenizers/__init__.py) of mappings between string option names and tokenizer classes.
 
 ## Citation
 

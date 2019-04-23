@@ -6,18 +6,19 @@
 # LICENSE file in the root directory of this source tree.
 """Evaluate the accuracy of the DrQA retriever module."""
 
-import regex as re
-import logging
 import argparse
 import json
-import time
+import logging
 import os
-
+import time
+from functools import partial
 from multiprocessing import Pool as ProcessPool
 from multiprocessing.util import Finalize
-from functools import partial
-from drqa import retriever, tokenizers
-from drqa.retriever import utils
+
+import regex as re
+
+from drka import retriever, tokenizers
+from drka.retriever import utils
 
 # ------------------------------------------------------------------------------
 # Multiprocessing target functions.
@@ -151,12 +152,12 @@ if __name__ == '__main__':
 
     filename = os.path.basename(args.dataset)
     stats = (
-        "\n" + "-" * 50 + "\n" +
-        "{filename}\n" +
-        "Examples:\t\t\t{total}\n" +
-        "Matches in top {k}:\t\t{m}\n" +
-        "Match % in top {k}:\t\t{p:2.2f}\n" +
-        "Total time:\t\t\t{t:2.4f} (s)\n"
+            "\n" + "-" * 50 + "\n" +
+            "{filename}\n" +
+            "Examples:\t\t\t{total}\n" +
+            "Matches in top {k}:\t\t{m}\n" +
+            "Match % in top {k}:\t\t{p:2.2f}\n" +
+            "Total time:\t\t\t{t:2.4f} (s)\n"
     ).format(
         filename=filename,
         total=len(scores),

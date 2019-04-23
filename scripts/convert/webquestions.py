@@ -13,8 +13,8 @@
 """
 
 import argparse
-import re
 import json
+import re
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input', type=str)
