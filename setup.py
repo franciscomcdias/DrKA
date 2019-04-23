@@ -17,7 +17,7 @@ with open('requirements.txt', errors='ignore') as f:
     _reqs = f.read()
 
 setup(
-    name='drqa',
+    name='drka',
     version='0.1.0-fdias.2',
     description='Document Reader Knowledge Assistant',
     long_description=readme,
