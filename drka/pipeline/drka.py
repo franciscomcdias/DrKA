@@ -83,13 +83,13 @@ class DrKA(object):
         Args:
             reader_model: model file from which to load the DocReader.
             embedding_file: if given, will expand DocReader dictionary to use
-              all available pretrained embeddings.
+              all available pre-trained embeddings.
             tokenizer: string option to specify tokenizer used on docs.
-            fixed_candidates: if given, all predictions will be constrated to
+            fixed_candidates: if given, all predictions will be constrained to
               the set of candidates contained in the file. One entry per line.
             batch_size: batch size when processing paragraphs.
             cuda: whether to use the gpu.
-            data_parallel: whether to use multile gpus.
+            data_parallel: whether to use multiple gpus.
             max_loaders: max number of async data loading workers when reading.
               (default is fine).
             num_workers: number of parallel CPU processes to use for tokenizing
@@ -182,21 +182,24 @@ class DrKA(object):
         )
         return loader
 
-    def process(self, query, candidates=None, top_n=1, n_docs=5,
-                return_context=False):
+    def process(self, query, candidates=None, top_n=1, n_docs=5, context=None):
+
         """Run a single query."""
         predictions = self.process_batch(
             [query], [candidates] if candidates else None,
-            top_n, n_docs, return_context
+            top_n, n_docs, context
         )
         return predictions[0]
 
     def process_batch(self, queries, candidates=None, top_n=1, n_docs=5,
-                      return_context=False):
+                      context=None):
         """Run a batch of queries (more efficient)."""
         t0 = time.time()
         logger.info('Processing %d queries...' % len(queries))
         logger.info('Retrieving top %d docs...' % n_docs)
+
+        if not context:
+            context = {"return": False, "window": None}
 
         # Rank documents for queries.
         if len(queries) == 1:
@@ -302,7 +305,7 @@ class DrKA(object):
                     'doc_score': float(all_doc_scores[qidx][rel_didx]),
                     'span_score': float(score),
                 }
-                if return_context:
+                if context["return"]:
                     prediction['context'] = {
                         'text': s_tokens[sidx].untokenize(),
                         'start': s_tokens[sidx].offsets()[s][0],

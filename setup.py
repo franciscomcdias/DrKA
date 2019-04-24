@@ -18,11 +18,11 @@ with open('requirements.txt', errors='ignore') as f:
 
 setup(
     name='drka',
-    version='0.1.0-fdias.2',
+    version='0.1.0-fdias.3',
     description='Document Reader Knowledge Assistant',
     long_description=readme,
     license=_license,
     python_requires='>=3.5',
-    packages=find_packages(exclude=('data')),
+    packages=find_packages(exclude=("data", "img")),
     install_requires=_reqs.strip().split('\n'),
 )
