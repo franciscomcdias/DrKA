@@ -24,7 +24,7 @@ class ElasticDocRanker(object):
     """
 
     def __init__(self, elastic_url=None, elastic_index=None, elastic_fields=None, elastic_field_doc_name=None,
-                 strict=True, elastic_field_content=None):
+                 strict=True, elastic_field_content=None, auth=None):
         """
         Args:
             elastic_url: URL of the ElasticSearch server containing port
@@ -37,7 +37,8 @@ class ElasticDocRanker(object):
         # Load from disk
         elastic_url = elastic_url or DEFAULTS['elastic_url']
         logger.info('Connecting to %s' % elastic_url)
-        self.es = Elasticsearch(hosts=elastic_url)
+
+        self.es = Elasticsearch(hosts=elastic_url, http_auth=auth) if auth else Elasticsearch(hosts=elastic_url)
         self.elastic_index = elastic_index
         self.elastic_fields = elastic_fields
         self.elastic_field_doc_name = elastic_field_doc_name
