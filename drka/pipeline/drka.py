@@ -4,7 +4,7 @@
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-"""Full DrQA pipeline."""
+"""Full DrKA pipeline."""
 
 import torch
 import regex
@@ -54,7 +54,7 @@ def tokenize_text(text):
 
 
 # ------------------------------------------------------------------------------
-# Main DrQA pipeline
+# Main DrKA pipeline
 # ------------------------------------------------------------------------------
 
 

@@ -1,6 +1,6 @@
 # DrKA
 
-My version of the Document Reader Q&A, with small improvements used in my projects.
+My version of the Document Reader Q&A, with improvements used in my projects.
 
 It based on a PyTorch implementation of the DrQA system described in the ACL 2017 paper [Reading Wikipedia to Answer Open-Domain Questions](https://arxiv.org/abs/1704.00051).
 
@@ -19,7 +19,7 @@ DrQA is a system for reading comprehension applied to open-domain question answe
 
 Our experiments with DrQA focus on answering factoid questions while using Wikipedia as the unique knowledge source for documents. Wikipedia is a well-suited source of large-scale, rich, detailed information. In order to answer any question, one must first retrieve the few potentially relevant articles among more than 5 million, and then scan them carefully to identify the answer.
 
-Note that DrQA treats Wikipedia as a generic collection of articles and does not rely on its internal graph structure. As a result, **_DrQA can be straightforwardly applied to any collection of documents_**, as described in the retriever [README](scripts/retriever/README.md).
+Note that DrQA treats Wikipedia as a generic collection of articles and does not rely on its internal graph structure. As a result, **_DrQA can be straightforwardly applied to any collection of documents_**, as described in the retriever [README](drka/scripts/retriever/README.md).
 
 This repository includes code, data, and pre-trained models for processing and querying Wikipedia as described in the paper -- see [Trained Models and Data](#trained-models-and-data). We also list several different datasets for evaluation, see [QA Datasets](#qa-datasets). Note that this work is a refactored and more efficient version of the original code. Reproduction numbers are very similar but not exact.
 
@@ -151,7 +151,7 @@ _Warning: this downloads a 7.5GB tarball (25GB untarred) and will take some time
 
 This stores the data in `data/` at the file paths specified in the various modules' defaults. This top-level directory can be modified by setting a `DRQA_DATA` environment variable to point to somewhere else.
 
-Default directory structure (see [embeddings](scripts/reader/README.md#note-on-word-embeddings) for more info on additional downloads for training):
+Default directory structure (see [embeddings](drka/scripts/reader/README.md#note-on-word-embeddings) for more info on additional downloads for training):
 ```
 DrQA
 ├── data (or $DRQA_DATA)
@@ -267,7 +267,7 @@ DrQA is not tied to any specific type of retrieval system -- as long as it effec
 
 Following classical QA systems, we include an efficient (non-machine learning) document retrieval system based on sparse, TF-IDF weighted bag-of-word vectors. We use bags of hashed n-grams (here, unigrams and bigrams).
 
-To see how to build your own such model on new documents, see the retriever [README](scripts/retriever/README.md).
+To see how to build your own such model on new documents, see the retriever [README](drka/scripts/retriever/README.md).
 
 To interactively query Wikipedia:
 
@@ -289,7 +289,7 @@ DrQA's Document Reader is a multi-layer recurrent neural network machine compreh
 
 The Document Reader was inspired by, and primarily trained on, the [SQuAD](https://arxiv.org/abs/1606.05250) dataset. It can also be used standalone on such SQuAD-like tasks where a specific context is supplied with the question, the answer to which is contained in the context.
 
-To see how to train the Document Reader on SQuAD, see the reader [README](scripts/reader/README.md).
+To see how to train the Document Reader on SQuAD, see the reader [README](drka/scripts/reader/README.md).
 
 To interactively ask questions about text with a trained model:
 
@@ -362,7 +362,7 @@ DrQA's performance improves significantly in the full-setting when provided with
 >DS Document: Live Free or Die
  **“Live Free or Die”** is the official **motto** of the **U.S. state** of _**New Hampshire**_, adopted by the **state** in 1945. It is possibly the best-known of all state mottos, partly because it conveys an assertive independence historically found in American political philosophy and partly because of its contrast to the milder sentiments found in other state mottos.
 
-The `scripts/distant` directory contains code to generate and inspect such distantly supervised data. More information can be found in the distant supervision [README](scripts/distant/README.md).
+The `scripts/distant` directory contains code to generate and inspect such distantly supervised data. More information can be found in the distant supervision [README](drka/scripts/distant/README.md).
 
 ### Tokenizers
 

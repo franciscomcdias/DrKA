@@ -4,7 +4,7 @@
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-"""Implementation of the RNN based DrQA reader."""
+"""Implementation of the RNN based DrKA reader."""
 
 import torch
 import torch.nn as nn

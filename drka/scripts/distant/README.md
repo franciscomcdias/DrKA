@@ -32,7 +32,7 @@ General:
   --workers             Number of CPU processes (for tokenizing, etc).
 ```
 
-The input dataset files must be in [format A](../../README.md#format-a).
+The input dataset files must be in [format A](../../../README.md#format-a).
 
 The generated datasets are already in the preprocessed format required for the [Document Reader training](../reader/README.md#training). To combine different distantly supervised datasets, simply concatenate the files.
 

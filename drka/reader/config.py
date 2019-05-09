@@ -4,7 +4,7 @@
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-"""Model architecture/optimization options for DrQA document reader."""
+"""Model architecture/optimization options for DRKA document reader."""
 
 import argparse
 import logging
@@ -34,7 +34,7 @@ def add_model_args(parser):
     parser.register('type', 'bool', str2bool)
 
     # Model architecture
-    model = parser.add_argument_group('DrQA Reader Model Architecture')
+    model = parser.add_argument_group('DRKA Reader Model Architecture')
     model.add_argument('--model-type', type=str, default='rnn',
                        help='Model architecture type')
     model.add_argument('--embedding-dim', type=int, default=300,
@@ -49,7 +49,7 @@ def add_model_args(parser):
                        help='RNN type: LSTM, GRU, or RNN')
 
     # Model specific details
-    detail = parser.add_argument_group('DrQA Reader Model Details')
+    detail = parser.add_argument_group('DRKA Reader Model Details')
     detail.add_argument('--concat-rnn-layers', type='bool', default=True,
                         help='Combine hidden states from each encoding layer')
     detail.add_argument('--question-merge', type=str, default='self_attn',
@@ -68,7 +68,7 @@ def add_model_args(parser):
                         help='Whether to use term frequency features')
 
     # Optimization details
-    optim = parser.add_argument_group('DrQA Reader Optimization')
+    optim = parser.add_argument_group('DRKA Reader Optimization')
     optim.add_argument('--dropout-emb', type=float, default=0.4,
                        help='Dropout rate for word embeddings')
     optim.add_argument('--dropout-rnn', type=float, default=0.4,

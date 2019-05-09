@@ -46,7 +46,7 @@ The sparse matrix and its associated metadata will be saved to the output direct
 
 ## Interactive
 
-The Document Retriever can also be used interactively (like the [full pipeline](../../README.md#quick-start-demo)).
+The Document Retriever can also be used interactively (like the [full pipeline](../../../README.md#quick-start-demo)).
 
 ```bash
 python scripts/retriever/interactive.py --model /path/to/model

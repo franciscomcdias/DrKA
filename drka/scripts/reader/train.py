@@ -4,7 +4,7 @@
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-"""Main DrQA reader training script."""
+"""Main DrKA reader training script."""
 
 import argparse
 import json
@@ -16,7 +16,7 @@ import sys
 import numpy as np
 import torch
 
-from drka import DATA_DIR as DRQA_DATA
+from drka import DATA_DIR as DRKA_DATA
 from drka.reader import DocReader
 from drka.reader import utils, vector, config, data
 
@@ -28,9 +28,9 @@ logger = logging.getLogger()
 
 
 # Defaults
-DATA_DIR = os.path.join(DRQA_DATA, 'datasets')
+DATA_DIR = os.path.join(DRKA_DATA, 'data')
 MODEL_DIR = '/tmp/drqa-models/'
-EMBED_DIR = os.path.join(DRQA_DATA, 'embeddings')
+EMBED_DIR = os.path.join(DRKA_DATA, 'embeddings')
 
 
 def str2bool(v):
@@ -507,7 +507,7 @@ def main(args):
 if __name__ == '__main__':
     # Parse cmdline args and setup environment
     parser = argparse.ArgumentParser(
-        'DrQA Document Reader',
+        'DrKA Document Reader',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     add_train_args(parser)

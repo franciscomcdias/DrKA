@@ -6,22 +6,23 @@
 # LICENSE file in the root directory of this source tree.
 """A script to build the tf-idf document matrices for retrieval."""
 
-import argparse
-import logging
-import math
-import os
-from collections import Counter
-from functools import partial
-from multiprocessing import Pool as ProcessPool
-from multiprocessing.util import Finalize
-
 import numpy as np
 import scipy.sparse as sp
+import argparse
+import os
+import math
+import logging
+
+from multiprocessing import Pool as ProcessPool
+from multiprocessing.util import Finalize
+from functools import partial
+from collections import Counter
 
 from drka import retriever
 from drka import tokenizers
 
 logger = logging.getLogger()
+
 logger.setLevel(logging.INFO)
 fmt = logging.Formatter('%(asctime)s: [ %(message)s ]', '%m/%d/%Y %I:%M:%S %p')
 console = logging.StreamHandler()
@@ -32,7 +33,6 @@ logger.addHandler(console)
 # Multiprocessing functions
 # ------------------------------------------------------------------------------
 
-DOC2IDX = None
 PROCESS_TOK = None
 PROCESS_DB = None
 
@@ -60,9 +60,9 @@ def tokenize(text):
 # ------------------------------------------------------------------------------
 
 
-def count(ngram, hash_size, doc_id):
+def count(ngram, hash_size, doc2idx, doc_id):
     """Fetch the text of a document and compute hashed ngrams counts."""
-    global DOC2IDX
+
     row, col, data = [], [], []
     # Tokenize
     tokens = tokenize(retriever.utils.normalize(fetch_text(doc_id)))
@@ -77,7 +77,7 @@ def count(ngram, hash_size, doc_id):
 
     # Return in sparse matrix data format.
     row.extend(counts.keys())
-    col.extend([DOC2IDX[doc_id]] * len(counts))
+    col.extend([doc2idx[doc_id]] * len(counts))
     data.extend(counts.values())
     return row, col, data
 
@@ -88,18 +88,18 @@ def get_count_matrix(args, db, db_opts):
     M[i, j] = # times word i appears in document j.
     """
     # Map doc_ids to indexes
-    global DOC2IDX
+
     db_class = retriever.get_class(db)
     with db_class(**db_opts) as doc_db:
         doc_ids = doc_db.get_doc_ids()
-    DOC2IDX = {doc_id: i for i, doc_id in enumerate(doc_ids)}
+    doc2idx = {doc_id: i for i, doc_id in enumerate(doc_ids)}
 
     # Setup worker pool
     tok_class = tokenizers.get_class(args.tokenizer)
     workers = ProcessPool(
         args.num_workers,
         initializer=init,
-        initargs=(tok_class, db_class, db_opts)
+        initargs=(tok_class, db_class, db_opts),
     )
 
     # Compute the count matrix in steps (to keep in memory)
@@ -107,7 +107,8 @@ def get_count_matrix(args, db, db_opts):
     row, col, data = [], [], []
     step = max(int(len(doc_ids) / 10), 1)
     batches = [doc_ids[i:i + step] for i in range(0, len(doc_ids), step)]
-    _count = partial(count, args.ngram, args.hash_size)
+    _count = partial(count, args.ngram, args.hash_size, doc2idx)
+
     for i, batch in enumerate(batches):
         logger.info('-' * 25 + 'Batch %d/%d' % (i + 1, len(batches)) + '-' * 25)
         for b_row, b_col, b_data in workers.imap_unordered(_count, batch):
@@ -122,7 +123,7 @@ def get_count_matrix(args, db, db_opts):
         (data, (row, col)), shape=(args.hash_size, len(doc_ids))
     )
     count_matrix.sum_duplicates()
-    return count_matrix, (DOC2IDX, doc_ids)
+    return count_matrix, (doc2idx, doc_ids)
 
 
 # ------------------------------------------------------------------------------
@@ -172,7 +173,7 @@ if __name__ == '__main__':
                         help='Number of buckets to use for hashing ngrams')
     parser.add_argument('--tokenizer', type=str, default='simple',
                         help=("String option specifying tokenizer type to use "
-                              "(e.g. 'spacy')"))
+                              "(e.g. 'corenlp')"))
     parser.add_argument('--num-workers', type=int, default=None,
                         help='Number of CPU processes (for tokenizing, etc)')
     args = parser.parse_args()

@@ -12,7 +12,7 @@ python scripts/reader/preprocess.py data/datasets data/datasets --split SQuAD-v1
 ```bash
 python scripts/reader/preprocess.py data/datasets data/datasets --split SQuAD-v1.1-dev
 ```
-- _You need to have [SQuAD](../../README.md#qa-datasets) train-v1.1.json and dev-v1.1.json in data/datasets (here renamed as SQuAD-v1.1-<train/dev>.json)_
+- _You need to have [SQuAD](../../../README.md#qa-datasets) train-v1.1.json and dev-v1.1.json in data/datasets (here renamed as SQuAD-v1.1-<train/dev>.json)_
 
 ## Training
 
@@ -140,7 +140,7 @@ python scripts/reader/official_eval.py /path/to/format/B/dataset.json /path/to/p
 
 ## Interactive
 
-The Document Reader can also be used interactively (like the [full pipeline](../../README.md#quick-start-demo)).
+The Document Reader can also be used interactively (like the [full pipeline](../../../README.md#quick-start-demo)).
 
 ```bash
 python scripts/reader/interactive.py --model /path/to/model

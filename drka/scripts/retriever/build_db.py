@@ -7,15 +7,14 @@
 """A script to read in and store documents in a sqlite database."""
 
 import argparse
-import importlib.util
-import json
-import logging
-import os
 import sqlite3
+import json
+import os
+import logging
+import importlib.util
+
 from multiprocessing import Pool as ProcessPool
-
 from tqdm import tqdm
-
 from drka.retriever import utils
 
 logger = logging.getLogger()
@@ -135,3 +134,4 @@ if __name__ == '__main__':
     store_contents(
         args.data_path, args.save_path, args.preprocess, args.num_workers
     )
+
