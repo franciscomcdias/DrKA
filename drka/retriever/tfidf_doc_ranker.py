@@ -53,6 +53,13 @@ class TfidfDocRanker(object):
         """Convert doc_index --> doc_id"""
         return self.doc_dict[1][doc_index]
 
+    def get_page_number(self, doc_index):
+        """Convert doc_index --> page_number"""
+        if len(self.doc_dict) >= 3:
+            return self.doc_dict[2][doc_index]
+        # provides retrofitting to the original models
+        return None
+
     def closest_docs(self, query, k=1):
         """Closest docs by dot product between query and documents
         in tfidf weighted word vector space.
@@ -68,7 +75,9 @@ class TfidfDocRanker(object):
 
         doc_scores = res.data[o_sort]
         doc_ids = [self.get_doc_id(i) for i in res.indices[o_sort]]
-        return doc_ids, doc_scores
+        page_numbers = [self.get_page_number(i) for i in res.indices[o_sort]]
+
+        return doc_ids, doc_scores, page_numbers
 
     def batch_closest_docs(self, queries, k=1, num_workers=None):
         """Process a batch of closest_docs requests multithreaded.
