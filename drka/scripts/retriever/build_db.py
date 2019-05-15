@@ -7,14 +7,15 @@
 """A script to read in and store documents in a sqlite database."""
 
 import argparse
-import sqlite3
-import json
-import os
-import logging
 import importlib.util
-
+import json
+import logging
+import os
+import sqlite3
 from multiprocessing import Pool as ProcessPool
+
 from tqdm import tqdm
+
 from drka.retriever import utils
 
 logger = logging.getLogger()
@@ -78,7 +79,7 @@ def get_contents(filename):
             if not doc:
                 continue
             # Add the document
-            documents.append((utils.normalize(doc['id']), doc['text']))
+            documents.append((utils.normalize(doc['id']), doc['text'], doc['page_number']))
     return documents
 
 
@@ -99,15 +100,15 @@ def store_contents(data_path, save_path, preprocess, num_workers=None):
     logger.info('Reading into database...')
     conn = sqlite3.connect(save_path)
     c = conn.cursor()
-    c.execute("CREATE TABLE documents (id PRIMARY KEY, text);")
+    c.execute("CREATE TABLE documents (id PRIMARY KEY, text, page_number);")
 
     workers = ProcessPool(num_workers, initializer=init, initargs=(preprocess,))
     files = [f for f in iter_files(data_path)]
     count = 0
     with tqdm(total=len(files)) as pbar:
-        for pairs in tqdm(workers.imap_unordered(get_contents, files)):
-            count += len(pairs)
-            c.executemany("INSERT INTO documents VALUES (?,?)", pairs)
+        for triples in tqdm(workers.imap_unordered(get_contents, files)):
+            count += len(triples)
+            c.executemany("INSERT INTO documents VALUES (?,?,?)", triples)
             pbar.update()
     logger.info('Read %d docs.' % count)
     logger.info('Committing...')
@@ -134,4 +135,3 @@ if __name__ == '__main__':
     store_contents(
         args.data_path, args.save_path, args.preprocess, args.num_workers
     )
-
