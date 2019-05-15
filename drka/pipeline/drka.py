@@ -102,17 +102,17 @@ class DrKA(object):
         self.fixed_candidates = fixed_candidates is not None
         self.cuda = cuda
 
-        logger.info('Initializing document ranker...')
+        logger.info("Initializing document ranker...")
         ranker_config = ranker_config or {}
-        ranker_class = ranker_config.get('class', DEFAULTS['ranker'])
-        ranker_opts = ranker_config.get('options', {})
+        ranker_class = ranker_config.get("class", DEFAULTS["ranker"])
+        ranker_opts = ranker_config.get("options", {})
         self.ranker = ranker_class(**ranker_opts)
 
-        logger.info('Initializing document reader...')
-        reader_model = reader_model or DEFAULTS['reader_model']
+        logger.info("Initializing document reader...")
+        reader_model = reader_model or DEFAULTS["reader_model"]
         self.reader = reader.DocReader.load(reader_model, normalize=False)
         if embedding_file:
-            logger.info('Expanding dictionary...')
+            logger.info("Expanding dictionary...")
             words = reader.utils.index_embedding_words(embedding_file)
             added = self.reader.expand_dictionary(words)
             self.reader.load_embeddings(added, embedding_file)
@@ -122,23 +122,23 @@ class DrKA(object):
             self.reader.parallelize()
 
         if not tokenizer:
-            tok_class = DEFAULTS['tokenizer']
+            tok_class = DEFAULTS["tokenizer"]
         else:
             tok_class = tokenizers.get_class(tokenizer)
         annotators = tokenizers.get_annotators_for_model(self.reader)
-        tok_opts = {'annotators': annotators}
+        tok_opts = {"annotators": annotators}
 
         # ElasticSearch is also used as backend if used as ranker
-        if hasattr(self.ranker, 'elastic'):
+        if hasattr(self.ranker, "elastic"):
             db_config = ranker_config
             db_class = ranker_class
             db_opts = ranker_opts
         else:
             db_config = db_config or {}
-            db_class = db_config.get('class', DEFAULTS['db'])
-            db_opts = db_config.get('options', {})
+            db_class = db_config.get("class", DEFAULTS["db"])
+            db_opts = db_config.get("options", {})
 
-        logger.info('Initializing tokenizers and document retrievers...')
+        logger.info("Initializing tokenizers and document retrievers...")
         self.num_workers = num_workers
         self.processes = ProcessPool(
             num_workers,
@@ -156,13 +156,13 @@ class DrKA(object):
                 continue
             # Maybe group paragraphs together until we hit a length limit
             if len(curr) > 0 and curr_len + len(split) > self.GROUP_LENGTH:
-                yield ' '.join(curr)
+                yield " ".join(curr)
                 curr = []
                 curr_len = 0
             curr.append(split)
             curr_len += len(split)
         if len(curr) > 0:
-            yield ' '.join(curr)
+            yield " ".join(curr)
 
     def _get_loader(self, data, num_loaders):
         """Return a pytorch data iterator for provided examples."""
@@ -195,8 +195,8 @@ class DrKA(object):
                       context=None):
         """Run a batch of queries (more efficient)."""
         t0 = time.time()
-        logger.info('Processing %d queries...' % len(queries))
-        logger.info('Retrieving top %d docs...' % n_docs)
+        logger.info("Processing %d queries..." % len(queries))
+        logger.info("Retrieving top %d docs..." % n_docs)
 
         if not context:
             context = {"return": False, "window": None}
@@ -208,7 +208,7 @@ class DrKA(object):
             ranked = self.ranker.batch_closest_docs(
                 queries, k=n_docs, num_workers=self.num_workers
             )
-        all_docids, all_doc_scores = zip(*ranked)
+        all_docids, all_doc_scores, all_page_numbers = zip(*ranked)
 
         # Flatten document ids and retrieve text from database.
         # We remove duplicates for processing efficiency.
@@ -248,16 +248,16 @@ class DrKA(object):
                     if (len(q_tokens[qidx].words()) > 0 and
                             len(s_tokens[sidx].words()) > 0):
                         examples.append({
-                            'id': (qidx, rel_didx, sidx),
-                            'question': q_tokens[qidx].words(),
-                            'qlemma': q_tokens[qidx].lemmas(),
-                            'document': s_tokens[sidx].words(),
-                            'lemma': s_tokens[sidx].lemmas(),
-                            'pos': s_tokens[sidx].pos(),
-                            'ner': s_tokens[sidx].entities(),
+                            "id": (qidx, rel_didx, sidx),
+                            "question": q_tokens[qidx].words(),
+                            "qlemma": q_tokens[qidx].lemmas(),
+                            "document": s_tokens[sidx].words(),
+                            "lemma": s_tokens[sidx].lemmas(),
+                            "pos": s_tokens[sidx].pos(),
+                            "ner": s_tokens[sidx].entities(),
                         })
 
-        logger.info('Reading %d paragraphs...' % len(examples))
+        logger.info("Reading %d paragraphs..." % len(examples))
 
         # Push all examples through the document reader.
         # We decode argmax start/end indices asychronously on CPU.
@@ -268,8 +268,8 @@ class DrKA(object):
                 batch_cands = []
                 for ex_id in batch[-1]:
                     batch_cands.append({
-                        'input': s_tokens[ex_id[2]],
-                        'cands': candidates[ex_id[0]] if candidates else None
+                        "input": s_tokens[ex_id[2]],
+                        "cands": candidates[ex_id[0]] if candidates else None
                     })
                 handle = self.reader.predict(
                     batch, batch_cands, async_pool=self.processes
@@ -279,7 +279,7 @@ class DrKA(object):
             result_handles.append((handle, batch[-1], batch[0].size(0)))
 
         # Iterate through the predictions, and maintain priority queues for
-        # top scored answers for each question in the batch.
+        #         # top scored answers for each question in the batch.
         queues = [[] for _ in range(len(queries))]
         for result, ex_ids, batch_size in result_handles:
             s, e, score = result.get()
@@ -300,21 +300,23 @@ class DrKA(object):
             while len(queue) > 0:
                 score, (qidx, rel_didx, sidx), s, e = heapq.heappop(queue)
                 prediction = {
-                    'doc_id': all_docids[qidx][rel_didx],
-                    'span': s_tokens[sidx].slice(s, e + 1).untokenize(),
-                    'doc_score': float(all_doc_scores[qidx][rel_didx]),
-                    'span_score': float(score),
+                    "doc_id": all_docids[qidx][rel_didx],
+                    "page_number": all_page_numbers[qidx][rel_didx],
+                    "span": s_tokens[sidx].slice(s, e + 1).untokenize(),
+                    "doc_score": float(all_doc_scores[qidx][rel_didx]),
+                    "span_score": float(score),
+                    "question": queries[0]
                 }
                 if context["return"]:
-                    prediction['context'] = {
-                        'text': s_tokens[sidx].untokenize(),
-                        'start': s_tokens[sidx].offsets()[s][0],
-                        'end': s_tokens[sidx].offsets()[e][1],
+                    prediction["context"] = {
+                        "text": s_tokens[sidx].untokenize(),
+                        "start": s_tokens[sidx].offsets()[s][0],
+                        "end": s_tokens[sidx].offsets()[e][1],
                     }
                 predictions.append(prediction)
             all_predictions.append(predictions[-1::-1])
 
-        logger.info('Processed %d queries in %.4f (s)' %
+        logger.info("Processed %d queries in %.4f (s)" %
                     (len(queries), time.time() - t0))
 
         return all_predictions
