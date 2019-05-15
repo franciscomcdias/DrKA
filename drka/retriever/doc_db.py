@@ -40,7 +40,15 @@ class DocDB(object):
     def get_doc_ids(self):
         """Fetch all ids of docs stored in the db."""
         cursor = self.connection.cursor()
-        cursor.execute("SELECT id FROM documents")
+        cursor.execute("SELECT id FROM documents ORDER BY id")
+        results = [r[0] for r in cursor.fetchall()]
+        cursor.close()
+        return results
+
+    def get_page_numbers(self):
+        """Fetch all page numbers stored in the db."""
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT page_number FROM documents ORDER BY id")
         results = [r[0] for r in cursor.fetchall()]
         cursor.close()
         return results
