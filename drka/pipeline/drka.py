@@ -6,24 +6,23 @@
 # LICENSE file in the root directory of this source tree.
 """Full DrKA pipeline."""
 
-import torch
-import regex
 import heapq
-import math
-import time
 import logging
-
+import time
 from multiprocessing import Pool as ProcessPool
 from multiprocessing.util import Finalize
 
-from ..reader.vector import batchify
-from ..reader.data import ReaderDataset, SortedBatchSampler
+import math
+import regex
+import torch
+
+from . import DEFAULTS
 from .. import reader
 from .. import tokenizers
-from . import DEFAULTS
+from ..reader.data import ReaderDataset, SortedBatchSampler
+from ..reader.vector import batchify
 
 logger = logging.getLogger(__name__)
-
 
 # ------------------------------------------------------------------------------
 # Multiprocessing functions to fetch and tokenize text
@@ -150,6 +149,7 @@ class DrKA(object):
         """Given a doc, split it into chunks (by paragraph)."""
         curr = []
         curr_len = 0
+
         for split in regex.split(r'\n+', doc):
             split = split.strip()
             if len(split) == 0:
@@ -182,17 +182,18 @@ class DrKA(object):
         )
         return loader
 
-    def process(self, query, candidates=None, top_n=1, n_docs=5, context=None):
+    def process(self, query, candidates=None, top_n=1, n_docs=5, context=None, inner_filter=None):
 
         """Run a single query."""
         predictions = self.process_batch(
             [query], [candidates] if candidates else None,
-            top_n, n_docs, context
+            top_n, n_docs, context,
+            inner_filter
         )
         return predictions[0]
 
     def process_batch(self, queries, candidates=None, top_n=1, n_docs=5,
-                      context=None):
+                      context=None, inner_filter=None):
         """Run a batch of queries (more efficient)."""
         t0 = time.time()
         logger.info("Processing %d queries..." % len(queries))
@@ -215,11 +216,32 @@ class DrKA(object):
         flat_docids = list({d for docids in all_docids for d in docids})
         did2didx = {did: didx for didx, did in enumerate(flat_docids)}
 
-        if self.ranker.name == "elastic":
+        if self.ranker.name in ["elastic", "custom"]:
             # HACK, as cannot pickle thread-locked objects
             doc_texts = [self.ranker.get_doc_text(flat_docid) for flat_docid in flat_docids]
         else:
             doc_texts = self.processes.map(fetch_text, flat_docids)
+
+        if inner_filter:
+
+            window_size = inner_filter["window"]
+
+            filtered_doc_texts = []
+            filtered_docids = []
+            filtered_doc_scores = []
+            filtered_page_numbers = []
+
+            for index, text in enumerate(doc_texts):
+                for filtered in self.ranker.filter_text(text, queries, window_size):
+                    filtered_doc_texts.append(filtered)
+                    filtered_docids.append(all_docids[0][index])
+                    filtered_doc_scores.append(all_doc_scores[0][index])
+                    filtered_page_numbers.append(all_page_numbers[0][index])
+
+            doc_texts = filtered_doc_texts
+            all_docids = [filtered_docids]
+            all_doc_scores = [filtered_doc_scores]
+            all_page_numbers = [filtered_page_numbers]
 
         # Split and flatten documents. Maintain a mapping from doc (index in
         # flat list) to split (index in flat list).
@@ -245,8 +267,7 @@ class DrKA(object):
             for rel_didx, did in enumerate(all_docids[qidx]):
                 start, end = didx2sidx[did2didx[did]]
                 for sidx in range(start, end):
-                    if (len(q_tokens[qidx].words()) > 0 and
-                            len(s_tokens[sidx].words()) > 0):
+                    if len(q_tokens[qidx].words()) > 0 and len(s_tokens[sidx].words()) > 0:
                         examples.append({
                             "id": (qidx, rel_didx, sidx),
                             "question": q_tokens[qidx].words(),
@@ -295,6 +316,7 @@ class DrKA(object):
 
         # Arrange final top prediction data.
         all_predictions = []
+
         for queue in queues:
             predictions = []
             while len(queue) > 0:
