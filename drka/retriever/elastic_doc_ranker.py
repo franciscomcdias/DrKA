@@ -63,9 +63,11 @@ class ElasticDocRanker(object):
         source = result['hits']['hits'][0]['_source']
         return utils.get_field(source, self.elastic_field_doc_name)
 
-    def closest_docs(self, query, k=1):
+    def closest_docs(self, query, k=1, **kwargs):
         """Closest docs by using ElasticSearch
         """
+        del kwargs
+
         results = self.es.search(index=self.elastic_index, body={'size': k, 'query':
             {'multi_match': {
                 'query': query,

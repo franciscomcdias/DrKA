@@ -182,18 +182,18 @@ class DrKA(object):
         )
         return loader
 
-    def process(self, query, candidates=None, top_n=1, n_docs=5, context=None, inner_filter=None):
+    def process(self, query, candidates=None, top_n=1, n_docs=5, context=None, data=None):
 
         """Run a single query."""
         predictions = self.process_batch(
             [query], [candidates] if candidates else None,
             top_n, n_docs, context,
-            inner_filter
+            data
         )
         return predictions[0]
 
     def process_batch(self, queries, candidates=None, top_n=1, n_docs=5,
-                      context=None, inner_filter=None):
+                      context=None, data=None):
         """Run a batch of queries (more efficient)."""
         t0 = time.time()
         logger.info("Processing %d queries..." % len(queries))
@@ -222,9 +222,10 @@ class DrKA(object):
         else:
             doc_texts = self.processes.map(fetch_text, flat_docids)
 
-        if inner_filter:
-
-            window_size = inner_filter["window"]
+        # splits the current document into smaller pieces of text with 'window' tokens and
+        # ranks the results for the best pieces of text
+        if data and "window" in data:
+            window_size = data["window"]
 
             filtered_doc_texts = []
             filtered_docids = []

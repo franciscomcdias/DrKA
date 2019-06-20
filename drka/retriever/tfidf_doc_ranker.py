@@ -60,10 +60,12 @@ class TfidfDocRanker(object):
         # provides retrofitting to the original models
         return None
 
-    def closest_docs(self, query, k=1):
+    def closest_docs(self, query, k=1, **kwargs):
         """Closest docs by dot product between query and documents
         in tfidf weighted word vector space.
         """
+        del kwargs
+
         spvec = self.text2spvec(query)
         res = spvec * self.doc_mat
 
