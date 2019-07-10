@@ -165,7 +165,7 @@ def get_doc_freqs(cnts):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('db_path', type=str, default=None,
-                        help='Path to sqlite db holding document texts')
+                        help='Path to sql db holding document texts')
     parser.add_argument('out_dir', type=str, default=None,
                         help='Directory for saving output files')
     parser.add_argument('--ngram', type=int, default=2,
@@ -182,7 +182,7 @@ if __name__ == '__main__':
 
     logging.info('Counting words...')
     count_matrix, doc_dict = get_count_matrix(
-        args, 'sqlite', {'db_path': args.db_path}
+        args, 'sql', {'db_path': args.db_path}
     )
 
     logger.info('Making tfidf vectors...')

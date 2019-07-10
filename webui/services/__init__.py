@@ -6,12 +6,12 @@
 # LICENSE file in the root directory of this source tree.
 # This code borrowed from https://github.com/facebookresearch/DrQA.git
 
-import torch
+import logging
 import os
 
+import torch
+
 from drka import pipeline
-from drka.retriever import utils
-import logging
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -20,12 +20,13 @@ console = logging.StreamHandler()
 console.setFormatter(fmt)
 logger.addHandler(console)
 
-drqa_data_directory = '../data'
+drka_data_directory = '../data'
 
 config = {
-    'reader-model': os.path.join(drqa_data_directory, 'reader', 'multitask.mdl'),
-    'retriever-model': os.path.join(drqa_data_directory, 'wikipedia', 'docs-tfidf-ngram=2-hash=16777216-tokenizer=simple.npz'),
-    'doc-db': os.path.join(drqa_data_directory, 'wikipedia', 'docs.db'),
+    'reader-model': os.path.join(drka_data_directory, 'reader', 'multitask.mdl'),
+    'retriever-model': os.path.join(drka_data_directory, 'wikipedia',
+                                    'docs-tfidf-ngram=2-hash=16777216-tokenizer=simple.npz'),
+    'doc-db': os.path.join(drka_data_directory, 'wikipedia', 'docs.db'),
     'embedding-file': None,
     'tokenizer': 'spacy',
     'no-cuda': True,
@@ -67,4 +68,3 @@ def process(question, candidates=None, top_n=1, n_docs=5):
             'end': p['context']['end']
         })
     return answers
-

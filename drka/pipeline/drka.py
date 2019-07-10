@@ -204,12 +204,13 @@ class DrKA(object):
 
         # Rank documents for queries.
         if len(queries) == 1:
-            if "id_token" in data and "access_token" in data:
+            if data and "id_token" in data and "access_token" in data:
                 id_token = data["id_token"]
                 access_token = data["access_token"]
                 ranked = [self.ranker.closest_docs(queries[0], k=n_docs, id_token=id_token, access_token=access_token)]
             else:
                 ranked = [self.ranker.closest_docs(queries[0], k=n_docs)]
+                print(ranked)
         else:
             ranked = self.ranker.batch_closest_docs(
                 queries, k=n_docs, num_workers=self.num_workers
