@@ -68,11 +68,16 @@ class ElasticDocRanker(object):
         """
         del kwargs
 
-        results = self.es.search(index=self.elastic_index, body={'size': k, 'query':
-            {'multi_match': {
-                'query': query,
-                'type': 'most_fields',
-                'fields': self.elastic_fields}}})
+        results = self.es.search(index=self.elastic_index, body={
+            'size': k,
+            'query':
+                {
+                    'multi_match': {
+                        'query': query,
+                        'type': 'most_fields',
+                        'fields': self.elastic_fields}
+                }
+        })
         hits = results['hits']['hits']
 
         doc_ids = [utils.get_field(row['_source'], self.elastic_field_doc_name) for row in hits]
@@ -80,7 +85,7 @@ class ElasticDocRanker(object):
         return doc_ids, doc_scores, 0
 
     def closest_docs_text(self, query, k=1, tags="em", **kwargs):
-        """Closest docs by using ElasticSearch
+        """Closest docs and content by using ElasticSearch
         """
         del kwargs
 
@@ -101,16 +106,12 @@ class ElasticDocRanker(object):
                 "post_tags": "</" + tags + ">"
             }
         })
-        hits = results['hits']['hits']
-        return {"answers": [
-            {
-                "block": " [...] ".join(hit["highlight"]["block"]),
-                "section": hit["_source"]["section"],
-                "filename": hit["_source"]["filename"],
-                "id": hit["_source"]["id"],
-                "score": hit["_score"]
-            }
-            for hit in hits]}
+
+        hits_ = []
+        if results and "hits" in results and "hits" in results['hits']:
+            hits_ = results['hits']['hits']
+
+        return {"answers": hits_}
 
     def batch_closest_docs(self, queries, k=1, num_workers=None):
         """Process a batch of closest_docs requests multithreaded.
