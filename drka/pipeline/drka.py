@@ -210,7 +210,6 @@ class DrKA(object):
                 ranked = [self.ranker.closest_docs(queries[0], k=n_docs, id_token=id_token, access_token=access_token)]
             else:
                 ranked = [self.ranker.closest_docs(queries[0], k=n_docs)]
-                print(ranked)
         else:
             ranked = self.ranker.batch_closest_docs(
                 queries, k=n_docs, num_workers=self.num_workers
@@ -330,7 +329,7 @@ class DrKA(object):
                 score, (qidx, rel_didx, sidx), s, e = heapq.heappop(queue)
                 prediction = {
                     "doc_id": all_docids[qidx][rel_didx],
-                    "page_number": all_page_numbers[qidx][rel_didx],
+                    "page_number": all_page_numbers[qidx][rel_didx] if len(all_page_numbers) >= qidx and all_page_numbers[qidx] else 0,
                     "span": s_tokens[sidx].slice(s, e + 1).untokenize(),
                     "doc_score": float(all_doc_scores[qidx][rel_didx]),
                     "span_score": float(score),
