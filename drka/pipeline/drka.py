@@ -127,42 +127,56 @@ class DrKA(object):
         annotators = tokenizers.get_annotators_for_model(self.reader)
         tok_opts = {"annotators": annotators}
 
-        # ElasticSearch is also used as backend if used as ranker
-        if hasattr(self.ranker, "elastic"):
-            db_config = ranker_config
+        logger.info("Loading ranker: " + self.ranker.name)
+
+        # ElasticSearch / Custom are also used as backends if used as ranker
+        if self.ranker.name in ["elastic", "custom"]:
+
             db_class = ranker_class
             db_opts = ranker_opts
+            self.num_workers = 1
+
         else:
+
             db_config = db_config or {}
             db_class = db_config.get("class", DEFAULTS["db"])
             db_opts = db_config.get("options", {})
 
-        logger.info("Initializing tokenizers and document retrievers...")
-        self.num_workers = num_workers
+            logger.info("Initializing tokenizer and document retrievers...")
+            self.num_workers = num_workers
+
         self.processes = ProcessPool(
             num_workers,
             initializer=init,
             initargs=(tok_class, tok_opts, db_class, db_opts, fixed_candidates)
         )
 
-    def _split_doc(self, doc):
+    def _split_doc(self, doc, ranker, queries, data):
         """Given a doc, split it into chunks (by paragraph)."""
-        curr = []
-        curr_len = 0
 
-        for split in regex.split(r'\n+', doc):
-            split = split.strip()
-            if len(split) == 0:
-                continue
-            # Maybe group paragraphs together until we hit a length limit
-            if len(curr) > 0 and curr_len + len(split) > self.GROUP_LENGTH:
-                yield " ".join(curr)
-                curr = []
-                curr_len = 0
-            curr.append(split)
-            curr_len += len(split)
-        if len(curr) > 0:
-            yield " ".join(curr)
+        if hasattr(ranker, "split_doc"):
+
+            for split in ranker.split_doc(doc, queries[0], data):
+                yield split
+
+        else:
+
+            current, current_len = [], 0
+
+            for split in regex.split(r'\n+', doc):
+                split = split.strip()
+                if len(split) == 0:
+                    continue
+                # Maybe group paragraphs together until we hit a length limit
+                if len(current) > 0 and current_len + len(split) > self.GROUP_LENGTH:
+                    yield " ".join(current)
+                    current = []
+                    current_len = 0
+                current.append(split)
+                current_len += len(split)
+
+            if len(current) > 0:
+                yield " ".join(current)
 
     def _get_loader(self, data, num_loaders):
         """Return a pytorch data iterator for provided examples."""
@@ -192,9 +206,15 @@ class DrKA(object):
         )
         return predictions[0]
 
-    def process_batch(self, queries, candidates=None, top_n=1, n_docs=5,
-                      context=None, data=None):
+    def process_batch(self, queries, candidates=None, top_n=1, n_docs=5, context=None, data=None):
         """Run a batch of queries (more efficient)."""
+
+        def get_page_numbers(all_page_numbers_, query_number_, rel_didx_):
+            if len(all_page_numbers_) >= query_number_ and all_page_numbers_[query_number_]:
+                return all_page_numbers_[query_number_][rel_didx_]
+            else:
+                return 0
+
         t0 = time.time()
         logger.info("Processing %d queries..." % len(queries))
         logger.info("Retrieving top %d docs..." % n_docs)
@@ -204,9 +224,11 @@ class DrKA(object):
 
         # Rank documents for queries.
         if len(queries) == 1:
-            if data and "id_token" in data and "access_token" in data:
-                id_token = data["id_token"]
-                access_token = data["access_token"]
+
+            id_token = data["id_token"] if data and "id_token" in data else ""
+            access_token = data["access_token"] if data and "access_token" in data else ""
+
+            if id_token or access_token:
                 ranked = [self.ranker.closest_docs(queries[0], k=n_docs, id_token=id_token, access_token=access_token)]
             else:
                 ranked = [self.ranker.closest_docs(queries[0], k=n_docs)]
@@ -214,51 +236,29 @@ class DrKA(object):
             ranked = self.ranker.batch_closest_docs(
                 queries, k=n_docs, num_workers=self.num_workers
             )
-        all_docids, all_doc_scores, all_page_numbers = zip(*ranked)
+        all_doc_ids, all_doc_scores, all_page_numbers = zip(*ranked)
 
         # Flatten document ids and retrieve text from database.
         # We remove duplicates for processing efficiency.
-        flat_docids = list({d for docids in all_docids for d in docids})
-        did2didx = {did: didx for didx, did in enumerate(flat_docids)}
+        flat_doc_ids = list({d for doc_ids in all_doc_ids for d in doc_ids})
+        doc_id2doc_index = {doc_id: doc_index for doc_index, doc_id in enumerate(flat_doc_ids)}
 
         if self.ranker.name in ["elastic", "custom"]:
             # HACK, as cannot pickle thread-locked objects
-            doc_texts = [self.ranker.get_doc_text(flat_docid) for flat_docid in flat_docids]
+            doc_texts = [self.ranker.get_doc_text(flat_docid) for flat_docid in flat_doc_ids]
         else:
-            doc_texts = self.processes.map(fetch_text, flat_docids)
-
-        # splits the current document into smaller pieces of text with 'window' tokens and
-        # ranks the results for the best pieces of text
-        if data and "window" in data:
-            window_size = data["window"]
-
-            filtered_doc_texts = []
-            filtered_docids = []
-            filtered_doc_scores = []
-            filtered_page_numbers = []
-
-            for index, text in enumerate(doc_texts):
-                for filtered in self.ranker.filter_text(text, queries, window_size):
-                    filtered_doc_texts.append(filtered)
-                    filtered_docids.append(all_docids[0][index])
-                    filtered_doc_scores.append(all_doc_scores[0][index])
-                    filtered_page_numbers.append(all_page_numbers[0][index])
-
-            doc_texts = filtered_doc_texts
-            all_docids = [filtered_docids]
-            all_doc_scores = [filtered_doc_scores]
-            all_page_numbers = [filtered_page_numbers]
+            doc_texts = self.processes.map(fetch_text, flat_doc_ids)
 
         # Split and flatten documents. Maintain a mapping from doc (index in
         # flat list) to split (index in flat list).
         flat_splits = []
-        didx2sidx = []
+        doc_index2split_index = []
         for text in doc_texts:
-            splits = self._split_doc(text)
-            didx2sidx.append([len(flat_splits), -1])
-            for split in splits:
+
+            doc_index2split_index.append([len(flat_splits), -1])
+            for split in self._split_doc(text, self.ranker, queries, data):
                 flat_splits.append(split)
-            didx2sidx[-1][1] = len(flat_splits)
+            doc_index2split_index[-1][1] = len(flat_splits)
 
         # Push through the tokenizers as fast as possible.
         q_tokens = self.processes.map_async(tokenize_text, queries)
@@ -269,15 +269,17 @@ class DrKA(object):
         # Group into structured example inputs. Examples' ids represent
         # mappings to their question, document, and split ids.
         examples = []
-        for qidx in range(len(queries)):
-            for rel_didx, did in enumerate(all_docids[qidx]):
-                start, end = didx2sidx[did2didx[did]]
+        for query_number in range(len(queries)):
+            for rel_didx, document_id in enumerate(all_doc_ids[query_number]):
+
+                start, end = doc_index2split_index[doc_id2doc_index[document_id]]
+
                 for sidx in range(start, end):
-                    if len(q_tokens[qidx].words()) > 0 and len(s_tokens[sidx].words()) > 0:
+                    if len(q_tokens[query_number].words()) > 0 and len(s_tokens[sidx].words()) > 0:
                         examples.append({
-                            "id": (qidx, rel_didx, sidx),
-                            "question": q_tokens[qidx].words(),
-                            "qlemma": q_tokens[qidx].lemmas(),
+                            "id": (query_number, rel_didx, sidx),
+                            "question": q_tokens[query_number].words(),
+                            "qlemma": q_tokens[query_number].lemmas(),
                             "document": s_tokens[sidx].words(),
                             "lemma": s_tokens[sidx].lemmas(),
                             "pos": s_tokens[sidx].pos(),
@@ -326,12 +328,12 @@ class DrKA(object):
         for queue in queues:
             predictions = []
             while len(queue) > 0:
-                score, (qidx, rel_didx, sidx), s, e = heapq.heappop(queue)
+                score, (query_number, rel_didx, sidx), s, e = heapq.heappop(queue)
                 prediction = {
-                    "doc_id": all_docids[qidx][rel_didx],
-                    "page_number": all_page_numbers[qidx][rel_didx] if len(all_page_numbers) >= qidx and all_page_numbers[qidx] else 0,
+                    "doc_id": all_doc_ids[query_number][rel_didx],
+                    "page_number": get_page_numbers(all_page_numbers, query_number, rel_didx),
                     "span": s_tokens[sidx].slice(s, e + 1).untokenize(),
-                    "doc_score": float(all_doc_scores[qidx][rel_didx]),
+                    "doc_score": float(all_doc_scores[query_number][rel_didx]),
                     "span_score": float(score),
                     "question": queries[0]
                 }
