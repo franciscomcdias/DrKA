@@ -69,15 +69,11 @@ class TfidfDocRanker(object):
         spvec = self.text2spvec(query)
         res = spvec * self.doc_mat
 
-        print(spvec)
-
         if len(res.data) <= k:
             o_sort = np.argsort(-res.data)
         else:
             o = np.argpartition(-res.data, k)[0:k]
             o_sort = o[np.argsort(-res.data[o])]
-
-        print(o_sort)
 
         doc_scores = res.data[o_sort]
         doc_ids = [self.get_doc_id(i) for i in res.indices[o_sort]]
