@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class ElasticDocRanker(object):
     """ Connect to an ElasticSearch index.
-        Score pairs based on Elasticsearch 
+        Score pairs based on ElasticSearch
     """
 
     def __init__(self, elastic_url=None, elastic_index=None, elastic_fields=None, elastic_field_doc_name=None,
@@ -29,7 +29,7 @@ class ElasticDocRanker(object):
         Args:
             elastic_url: URL of the ElasticSearch server containing port
             elastic_index: Index name of ElasticSearch
-            elastic_fields: Fields of the Elasticsearch index to search in
+            elastic_fields: Fields of the ElasticSearch index to search in
             elastic_field_doc_name: Field containing the name of the document (index)
             strict: fail on empty queries or continue (and return empty result)
             elastic_field_content: Field containing the content of document in plain text
@@ -46,6 +46,12 @@ class ElasticDocRanker(object):
         self.strict = strict
         self.name = "elastic"
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
     # Elastic Ranker
 
     def get_doc_index(self, doc_id):
@@ -53,8 +59,7 @@ class ElasticDocRanker(object):
         field_index = self.elastic_field_doc_name
         if isinstance(field_index, list):
             field_index = '.'.join(field_index)
-        result = self.es.search(index=self.elastic_index, body={'query': {'match':
-                                                                              {field_index: doc_id}}})
+        result = self.es.search(index=self.elastic_index, body={'query': {'match': {field_index: doc_id}}})
         return result['hits']['hits'][0]['_id']
 
     def get_doc_id(self, doc_index):
@@ -102,6 +107,7 @@ class ElasticDocRanker(object):
                 "fields": {
                     self.elastic_field_content: {}
                 },
+                # TODO: Move these tags to the frontend
                 "pre_tags": "<" + tags + ">",
                 "post_tags": "</" + tags + ">"
             }
@@ -114,7 +120,7 @@ class ElasticDocRanker(object):
         return {"answers": hits_}
 
     def batch_closest_docs(self, queries, k=1, num_workers=None):
-        """Process a batch of closest_docs requests multithreaded.
+        """Process a batch of closest_docs requests multi-threaded.
         Note: we can use plain threads here as scipy is outside of the GIL.
         """
         with ThreadPool(num_workers) as threads:
@@ -123,9 +129,6 @@ class ElasticDocRanker(object):
         return results
 
     # Elastic DB
-
-    def __enter__(self):
-        return self
 
     def close(self):
         """Close the connection to the database."""
