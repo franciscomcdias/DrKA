@@ -34,6 +34,7 @@ def get_class(name):
     raise RuntimeError('Invalid retriever class: %s' % name)
 
 
-from .doc_db import DocDB
+from .doc_db_ranker import DocDB
 from .tfidf_doc_ranker import TfidfDocRanker
 from .elastic_doc_ranker import ElasticDocRanker
+from .base_ranker import BaseRanker
