@@ -12,7 +12,7 @@ from multiprocessing.pool import ThreadPool
 
 from elasticsearch import Elasticsearch
 
-from retriever.base_ranker import BaseRanker
+from drka.retriever.base_ranker import BaseRanker
 from . import DEFAULTS
 from . import utils
 

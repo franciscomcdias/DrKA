@@ -10,7 +10,7 @@ import sqlite3
 
 from drka.retriever import DEFAULTS
 from drka.retriever import utils
-from retriever.base_ranker import BaseRanker
+from drka.retriever.base_ranker import BaseRanker
 
 
 class DocDB(BaseRanker):

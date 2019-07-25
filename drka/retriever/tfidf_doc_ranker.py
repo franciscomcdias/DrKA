@@ -14,7 +14,7 @@ import numpy as np
 import scipy.sparse as sp
 
 from drka import tokenizers
-from retriever.base_ranker import BaseRanker
+from drka.retriever.base_ranker import BaseRanker
 from . import DEFAULTS
 from . import utils
 
