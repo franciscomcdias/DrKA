@@ -14,7 +14,7 @@ class BaseRanker(object):
     def __init__(self, name, language="english"):
         self.name = name
         self.cache = {}
-        self.stop_words = stop_words.get_stop_words(language) if language else []
+        self.stop_words = set(stop_words.get_stop_words(language)) if language else []
         self.filter_most_relevant = False
 
     def close(self):
@@ -68,6 +68,8 @@ class BaseRanker(object):
             doc = doc.replace("\ufb01", "fi")
             # Ellipsis
             doc = doc.replace("\u2026", "...")
+            # Vertical tab
+            doc = doc.replace("\x0b", ". ")
 
             sections = []
             current = {"text": [], "tokens": []}
@@ -87,6 +89,13 @@ class BaseRanker(object):
                         }
                     )
                     current = {"text": [], "tokens": []}
+            if current["tokens"]:
+                sections.append(
+                    {
+                        "tokens": " ".join(main_tokens(current["tokens"])),
+                        "text": " ".join(current["text"])
+                    }
+                )
 
             if filter_most_relevant or self.filter_most_relevant:
                 matrix = []
