@@ -1,8 +1,18 @@
 # DrKA
 
-My version of the Document Reader Q&A, with improvements used in my projects.
+My version of the Document Reader Q&A, with improvements used in my projects. It is based on a PyTorch implementation of the DrQA system described in the ACL 2017 paper [Reading Wikipedia to Answer Open-Domain Questions](https://arxiv.org/abs/1704.00051).
 
-It based on a PyTorch implementation of the DrQA system described in the ACL 2017 paper [Reading Wikipedia to Answer Open-Domain Questions](https://arxiv.org/abs/1704.00051).
+This version was updated in order to:
+- run on Linux and Windows
+- support Python 3.5+ and PyTorch 1.0
+- apply small performance tweaks
+- accept datasets from squad v2.0
+- add custom document retrievers
+- add metadata associated to the documents
+- work mainly with spaCy and NLTK (dropped Stanford NLP Core)
+- have easier domain-specific adaptations 
+
+
 
 ## Quick Links
 
@@ -13,7 +23,7 @@ It based on a PyTorch implementation of the DrQA system described in the ACL 201
 
 ## Machine Reading at Scale
 
-<p align="center"><img width="70%" src="img/drqa.png" /></p>
+<p align="center"><img width="70%" src="docs/img/drqa.png" /></p>
 
 DrQA is a system for reading comprehension applied to open-domain question answering. In particular, DrQA is targeted at the task of "machine reading at scale" (MRS). In this setting, we are searching for an answer to a question in a potentially very large corpus of unstructured documents (that may not be redundant). Thus the system has to combine the challenges of document retrieval (finding the relevant documents) with that of machine comprehension of text (identifying the answers from those documents).
 
