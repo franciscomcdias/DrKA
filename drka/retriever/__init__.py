@@ -6,22 +6,24 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
-
-from .. import DATA_DIR
+from drka import DATA_DIR
 
 DEFAULTS = {
     'db_path': os.path.join(DATA_DIR, 'data/docs.db'),
-    'tfidf_path': os.path.join(
-        DATA_DIR,
-        'data/docs-tfidf.npz'
-    ),
-    'elastic_url': 'localhost:9200'
+    'tfidf_path': os.path.join(DATA_DIR, 'data/docs-tfidf.npz'),
+    'elastic_url': 'http://localhost:9200'
 }
 
 
 def set_default(key, value):
     global DEFAULTS
     DEFAULTS[key] = value
+
+
+from .base_ranker import BaseRanker
+from .doc_db_ranker import DocDB
+from .elastic_doc_ranker import ElasticDocRanker
+from .tfidf_doc_ranker import TfidfDocRanker
 
 
 def get_class(name):
@@ -32,9 +34,3 @@ def get_class(name):
     if name == 'elastic':
         return ElasticDocRanker
     raise RuntimeError('Invalid retriever class: %s' % name)
-
-
-from .doc_db_ranker import DocDB
-from .tfidf_doc_ranker import TfidfDocRanker
-from .elastic_doc_ranker import ElasticDocRanker
-from .base_ranker import BaseRanker
