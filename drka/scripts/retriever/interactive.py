@@ -35,12 +35,12 @@ ranker = retriever.get_class('tfidf')(tfidf_path=args.model)
 
 
 def process(query, k=1):
-    doc_names, doc_scores = ranker.closest_docs(query, k)
+    doc_names, doc_scores, metadata = ranker.closest_docs(query, k)
     table = prettytable.PrettyTable(
-        ['Rank', 'Doc Id', 'Doc Score']
+        ['Rank', 'Doc Id', 'Doc Score', 'Page']
     )
     for i in range(len(doc_names)):
-        table.add_row([i + 1, doc_names[i], '%.5g' % doc_scores[i]])
+        table.add_row([i + 1, doc_names[i], '%.5g' % doc_scores[i], metadata[i]])
     print(table)
 
 
