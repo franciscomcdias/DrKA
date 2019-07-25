@@ -8,20 +8,22 @@
 
 import sqlite3
 
-from . import DEFAULTS
-from . import utils
+from drka.retriever import DEFAULTS
+from drka.retriever import utils
+from retriever.base_ranker import BaseRanker
 
 
-class DocDB(object):
+class DocDB(BaseRanker):
     """Sqlite backed document storage.
 
     Implements get_doc_text(doc_id).
     """
 
     def __init__(self, db_path=None):
+        super().__init__("sql")
+
         self.path = db_path or DEFAULTS['db_path']
         self.connection = sqlite3.connect(self.path, check_same_thread=False)
-        self.name = "sql"
 
     def __enter__(self):
         return self

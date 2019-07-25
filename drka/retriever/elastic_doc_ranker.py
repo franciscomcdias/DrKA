@@ -12,13 +12,14 @@ from multiprocessing.pool import ThreadPool
 
 from elasticsearch import Elasticsearch
 
+from retriever.base_ranker import BaseRanker
 from . import DEFAULTS
 from . import utils
 
 logger = logging.getLogger(__name__)
 
 
-class ElasticDocRanker(object):
+class ElasticDocRanker(BaseRanker):
     """ Connect to an ElasticSearch index.
         Score pairs based on ElasticSearch
     """
@@ -38,13 +39,15 @@ class ElasticDocRanker(object):
         elastic_url = elastic_url or DEFAULTS['elastic_url']
         logger.info('Connecting to %s' % elastic_url)
 
+        super().__init__("elastic")
+
         self.es = Elasticsearch(hosts=elastic_url, http_auth=auth) if auth else Elasticsearch(hosts=elastic_url)
         self.elastic_index = elastic_index
         self.elastic_fields = elastic_fields
         self.elastic_field_doc_name = elastic_field_doc_name
         self.elastic_field_content = elastic_field_content
         self.strict = strict
-        self.name = "elastic"
+        self.filter_most_relevant = True
 
     def __enter__(self):
         return self
@@ -100,7 +103,8 @@ class ElasticDocRanker(object):
                 'multi_match': {
                     'query': query,
                     'type': 'most_fields',
-                    'fields': self.elastic_fields
+                    'fields': self.elastic_fields,
+                    "slop": 1000
                 }
             },
             "highlight": {

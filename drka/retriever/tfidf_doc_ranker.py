@@ -13,14 +13,15 @@ from multiprocessing.pool import ThreadPool
 import numpy as np
 import scipy.sparse as sp
 
+from drka import tokenizers
+from retriever.base_ranker import BaseRanker
 from . import DEFAULTS
 from . import utils
-from .. import tokenizers
 
 logger = logging.getLogger(__name__)
 
 
-class TfidfDocRanker(object):
+class TfidfDocRanker(BaseRanker):
     """Loads a pre-weighted inverted index of token/document terms.
     Scores new queries by taking sparse dot products.
     """
@@ -32,6 +33,9 @@ class TfidfDocRanker(object):
             strict: fail on empty queries or continue (and return empty result)
         """
         # Load from disk
+
+        super().__init__("tfidf")
+
         tfidf_path = tfidf_path or DEFAULTS['tfidf_path']
         logger.info('Loading %s' % tfidf_path)
         matrix, metadata = utils.load_sparse_csr(tfidf_path)
@@ -43,7 +47,6 @@ class TfidfDocRanker(object):
         self.doc_dict = metadata['doc_dict']
         self.num_docs = len(self.doc_dict[0])
         self.strict = strict
-        self.name = "tfidf"
 
     def get_doc_index(self, doc_id):
         """Convert doc_id --> doc_index"""
