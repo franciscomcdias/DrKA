@@ -7,13 +7,15 @@
 """DrKA reader utilities."""
 
 import json
-import time
 import logging
 import string
+import time
+from collections import Counter
+
 import regex as re
 
-from collections import Counter
 from .data import Dictionary
+from .. import SER_MODEL_EXTENSION
 
 logger = logging.getLogger(__name__)
 
@@ -82,15 +84,19 @@ def load_answers(filename):
 def index_embedding_words(embedding_file):
     """Put all the words in embedding_file into a set."""
     words = set()
-    with open(embedding_file, encoding="utf8") as f:
-        for line in f:
-            w = Dictionary.normalize(line.rstrip().split(' ')[0])
-            words.add(w)
+    if embedding_file.endswith(SER_MODEL_EXTENSION):
+        logger.info("Not using word index: serializaed w.emb.")
+    else:
+        with open(embedding_file, encoding="utf8") as f:
+            for line in f:
+                w = Dictionary.normalize(line.rstrip().split(' ')[0])
+                words.add(w)
     return words
 
 
 def load_words(args, examples):
     """Iterate and index all the words in examples (documents + questions)."""
+
     def _insert(iterable):
         for w in iterable:
             w = Dictionary.normalize(w)
@@ -135,6 +141,7 @@ def top_question_words(args, examples, word_dict):
 
 def build_feature_dict(args, examples):
     """Index features (one hot) from fields in examples and options."""
+
     def _insert(feature):
         if feature not in feature_dict:
             feature_dict[feature] = len(feature_dict)
@@ -173,6 +180,7 @@ def build_feature_dict(args, examples):
 
 def normalize_answer(s):
     """Lower text and remove punctuation, articles and extra whitespace."""
+
     def remove_articles(text):
         return re.sub(r'\b(a|an|the)\b', ' ', text)
 
@@ -229,6 +237,7 @@ def metric_max_over_ground_truths(metric_fn, prediction, ground_truths):
     for ground_truth in ground_truths:
         score = metric_fn(prediction, ground_truth)
         scores_for_ground_truths.append(score)
+
     return max(scores_for_ground_truths)
 
 
