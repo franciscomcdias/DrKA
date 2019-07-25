@@ -13,8 +13,8 @@ from multiprocessing.util import Finalize
 
 from .vector import vectorize, batchify
 from .model import DocReader
-from . import DEFAULTS, utils
-from .. import tokenizers
+from drka.retriever import DEFAULTS, utils
+from drka import tokenizers
 
 logger = logging.getLogger(__name__)
 
