@@ -6,12 +6,13 @@
 # LICENSE file in the root directory of this source tree.
 """DrKA Document Reader model"""
 
-import torch
-import torch.optim as optim
-import torch.nn.functional as F
-import numpy as np
-import logging
 import copy
+import logging
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+import torch.optim as optim
 
 from .config import override_model_args
 from .rnn_reader import RnnDocReader
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class DocReader(object):
-    """High level model that handles intializing the underlying network
+    """High level model that handles initializing the underlying network
     architecture, saving, updating examples, and predicting examples.
     """
 
@@ -28,11 +29,11 @@ class DocReader(object):
     # Initialization
     # --------------------------------------------------------------------------
 
-    def __init__(self, args, word_dict, feature_dict,
-                 state_dict=None, normalize=True):
+    def __init__(self, args, word_dict, feature_dict, state_dict=None, normalize=True, empty_word_dict=False):
         # Book-keeping.
         self.args = args
         self.word_dict = word_dict
+        self.empty_word_dict = empty_word_dict
         self.args.vocab_size = len(word_dict)
         self.feature_dict = feature_dict
         self.args.num_features = len(feature_dict)
@@ -87,17 +88,39 @@ class DocReader(object):
         # Return added words
         return to_add
 
+    def load_serialized_embeddings(self, embedding_file):
+        """
+        Loads pre-trained embeddings serialized as a torch.Tensor
+
+        Args:
+            embedding_file: path to serialized file of embeddings.
+        """
+        logger.warning("Loading serialized embeddings")
+        self.network.embedding.weight.data = torch.load(open(embedding_file, "rb"))
+        logger.warning("Loaded %s embeddings" % str(self.network.embedding.weight.data.size(0)))
+
+    def save_serialized_embeddings(self, embedding_file):
+        """
+        Serializes the pre-trained embeddings as a torch.Tensor
+
+        Args:
+            embedding_file: path to serialized file of embeddings.
+        """
+        torch.save(self.network.embedding.weight.data, open(embedding_file, "wb"))
+
     def load_embeddings(self, words, embedding_file):
-        """Load pretrained embeddings for a given list of words, if they exist.
+        """Load pre-trained embeddings for a given list of words, if they exist.
 
         Args:
             words: iterable of tokens. Only those that are indexed in the
               dictionary are kept.
             embedding_file: path to text file of embeddings, space separated.
         """
-        words = {w for w in words if w in self.word_dict}
-        logger.info('Loading pre-trained embeddings for %d words from %s' %
-                    (len(words), embedding_file))
+        if self.empty_word_dict:
+            words = {}
+        else:
+            words = {w for w in words if w in self.word_dict}
+        logger.info('Loading pre-trained embeddings for %d words from %s' % (len(words), embedding_file))
         embedding = self.network.embedding.weight.data
 
         # When normalized, some words are duplicated. (Average the embeddings).
@@ -111,9 +134,9 @@ class DocReader(object):
 
             for line in f:
                 parsed = line.rstrip().split(' ')
-                assert(len(parsed) == embedding.size(1) + 1)
+                assert (len(parsed) == embedding.size(1) + 1)
                 w = self.word_dict.normalize(parsed[0])
-                if w in words:
+                if w in words or self.empty_word_dict:
                     vec = torch.Tensor([float(i) for i in parsed[1:]])
                     if w not in vec_counts:
                         vec_counts[w] = 1
@@ -128,8 +151,8 @@ class DocReader(object):
         for w, c in vec_counts.items():
             embedding[self.word_dict[w]].div_(c)
 
-        logger.info('Loaded %d embeddings (%.2f%%)' %
-                    (len(vec_counts), 100 * len(vec_counts) / len(words)))
+        logger.info('Loaded %d words' % (len(embedding)))
+        logger.info('Loaded %d embeddings (%.2f%%)' % (len(vec_counts), 100 * len(vec_counts) / len(words)))
 
     def tune_embeddings(self, words):
         """Unfix the embeddings of a list of words. This is only relevant if
@@ -282,8 +305,7 @@ class DocReader(object):
 
         # Transfer to GPU
         if self.use_cuda:
-            inputs = [e if e is None else e.cuda(non_blocking=True)
-                      for e in ex[:5]]
+            inputs = [e if e is None else e.cuda(non_blocking=True) for e in ex[:5]]
         else:
             inputs = [e for e in ex[:5]]
 
@@ -437,9 +459,7 @@ class DocReader(object):
     @staticmethod
     def load(filename, new_args=None, normalize=True):
         logger.info('Loading model %s' % filename)
-        saved_params = torch.load(
-            filename, map_location=lambda storage, loc: storage
-        )
+        saved_params = torch.load(filename, map_location=lambda storage, loc: storage)
         word_dict = saved_params['word_dict']
         feature_dict = saved_params['feature_dict']
         state_dict = saved_params['state_dict']
