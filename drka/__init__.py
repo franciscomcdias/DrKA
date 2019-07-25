@@ -16,6 +16,8 @@ DATA_DIR = (
         os.path.join(os.getcwd(), 'data')
 )
 
+SER_MODEL_EXTENSION = ".mdl"
+
 from . import tokenizers
 from . import reader
 from . import retriever
