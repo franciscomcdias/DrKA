@@ -17,6 +17,7 @@ import regex
 import torch
 
 from . import DEFAULTS
+from .. import SER_MODEL_EXTENSION
 from .. import reader
 from .. import tokenizers
 from ..reader.data import ReaderDataset, SortedBatchSampler
@@ -112,9 +113,12 @@ class DrKA(object):
         self.reader = reader.DocReader.load(reader_model, normalize=False)
         if embedding_file:
             logger.info("Expanding dictionary...")
-            words = reader.utils.index_embedding_words(embedding_file)
-            added = self.reader.expand_dictionary(words)
-            self.reader.load_embeddings(added, embedding_file)
+            if embedding_file.endswith(SER_MODEL_EXTENSION):
+                self.reader.load_serialized_embeddings(embedding_file)
+            else:
+                words = reader.utils.index_embedding_words(embedding_file)
+                added = self.reader.expand_dictionary(words)
+                self.reader.load_embeddings(added, embedding_file)
         if cuda:
             self.reader.cuda()
         if data_parallel:
