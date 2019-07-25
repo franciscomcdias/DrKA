@@ -10,7 +10,6 @@ import argparse
 import json
 import logging
 import os
-import subprocess
 import sys
 
 import numpy as np
@@ -49,7 +48,7 @@ def add_train_args(parser):
                          help='Train on CPU, even if GPUs are available.')
     runtime.add_argument('--gpu', type=int, default=-1,
                          help='Run on a specific GPU')
-    runtime.add_argument('--data-workers', type=int, default=5,
+    runtime.add_argument('--data-workers', type=int, default=0,
                          help='Number of subprocesses for data loading')
     runtime.add_argument('--parallel', type='bool', default=False,
                          help='Use DataParallel on all available GPUs')
@@ -84,23 +83,21 @@ def add_train_args(parser):
                        help='Directory of pre-trained embedding files')
     files.add_argument('--embedding-file', type=str,
                        default='glove.840B.300d.txt',
-                       help='Space-separated pretrained embeddings file')
+                       help='Space-separated pre_trained embeddings file')
 
     # Saving + loading
     save_load = parser.add_argument_group('Saving/Loading')
     save_load.add_argument('--checkpoint', type='bool', default=False,
                            help='Save model + optimizer state after each epoch')
-    save_load.add_argument('--pretrained', type=str, default='',
-                           help='Path to a pretrained model to warm-start with')
+    save_load.add_argument('--pre-trained', type=str, default='',
+                           help='Path to a pre_trained model to warm-start with')
     save_load.add_argument('--expand-dictionary', type='bool', default=False,
-                           help='Expand dictionary of pretrained model to ' +
+                           help='Expand dictionary of pre_trained model to ' +
                                 'include training/dev words of new data')
-    # Data preprocessing
+    # Data pre-processing
     preprocess = parser.add_argument_group('Preprocessing')
-    preprocess.add_argument('--uncased-question', type='bool', default=False,
-                            help='Question words will be lower-cased')
-    preprocess.add_argument('--uncased-doc', type='bool', default=False,
-                            help='Document words will be lower-cased')
+    preprocess.add_argument('--uncased-question', action='store_true', help='Question words will be lower-cased')
+    preprocess.add_argument('--uncased-doc', action='store_true', help='Document words will be lower-cased')
     preprocess.add_argument('--restrict-vocab', type='bool', default=True,
                             help='Only use pre-trained words in embedding_file')
 
@@ -134,7 +131,8 @@ def set_defaults(args):
             raise IOError('No such file: %s' % args.embedding_file)
 
     # Set model directory
-    subprocess.call(['mkdir', '-p', args.model_dir])
+    # subprocess.call(['mkdir', '-p', args.model_dir])
+    os.makedirs(args.model_dir, exist_ok=True)
 
     # Set model name
     if not args.model_name:
@@ -144,18 +142,10 @@ def set_defaults(args):
 
     # Set log + model file names
     args.log_file = os.path.join(args.model_dir, args.model_name + '.txt')
-    args.model_file = os.path.join(args.model_dir, args.model_name + '.mdl')
+    args.model_file = os.path.join(args.model_dir, args.model_name + utils.SER_MODEL_EXTENSION)
 
     # Embeddings options
-    if args.embedding_file:
-        with open(args.embedding_file) as f:
-            line = f.readline().rstrip().split(' ')
-            if len(line) == 2:
-                dim = int(line[1])
-            else:
-                dim = len(f.readline().rstrip().split(' ')) - 1
-        args.embedding_dim = dim
-    elif not args.embedding_dim:
+    if args.embedding_dim:
         raise RuntimeError('Either embedding_file or embedding_dim '
                            'needs to be specified.')
 
@@ -166,7 +156,7 @@ def set_defaults(args):
 
     # Make sure fix_embeddings and embedding_file are consistent
     if args.fix_embeddings:
-        if not (args.embedding_file or args.pretrained):
+        if not (args.embedding_file or args.pre_trained):
             logger.warning('WARN: fix_embeddings set to False '
                            'as embeddings are random.')
             args.fix_embeddings = False
@@ -194,11 +184,14 @@ def init_from_scratch(args, train_exs, dev_exs):
     logger.info('Num words = %d' % len(word_dict))
 
     # Initialize model
-    model = DocReader(config.get_model_args(args), word_dict, feature_dict)
+    model = DocReader(config.get_model_args(args), word_dict, feature_dict, empty_word_dict=False)
 
-    # Load pretrained embeddings for words in dictionary
+    # Load pre_trained embeddings for words in dictionary
     if args.embedding_file:
-        model.load_embeddings(word_dict.tokens(), args.embedding_file)
+        if args.embedding_file.endswith(utils.SER_MODEL_EXTENSION):
+            model.load_serialized_embeddings(args.embedding_file)
+        else:
+            model.load_embeddings(word_dict.tokens(), args.embedding_file)
 
     return model
 
@@ -220,7 +213,7 @@ def train(args, data_loader, model, global_stats):
 
         if idx % args.display_iter == 0:
             logger.info('train: Epoch = %d | iter = %d/%d | ' %
-                        (global_stats['epoch'], idx, len(data_loader)) +
+                        (global_stats['epoch'], - idx, len(data_loader)) +
                         'loss = %.2f | elapsed time = %.2f (s)' %
                         (train_loss.avg, global_stats['timer'].time()))
             train_loss.reset()
@@ -369,7 +362,7 @@ def main(args):
     dev_exs = utils.load_data(args, args.dev_file)
     logger.info('Num dev examples = %d' % len(dev_exs))
 
-    # If we are doing offician evals then we need to:
+    # If we are doing official evals then we need to:
     # 1) Load the original text to retrieve spans from offsets.
     # 2) Load the (multiple) text answers for each question.
     if args.official_eval:
@@ -387,17 +380,17 @@ def main(args):
         checkpoint_file = args.model_file + '.checkpoint'
         model, start_epoch = DocReader.load_checkpoint(checkpoint_file, args)
     else:
-        # Training starts fresh. But the model state is either pretrained or
+        # Training starts fresh. But the model state is either pre_trained or
         # newly (randomly) initialized.
-        if args.pretrained:
-            logger.info('Using pretrained model...')
-            model = DocReader.load(args.pretrained, args)
+        if args.pre_trained:
+            logger.info('Using pre_trained model...')
+            model = DocReader.load(args.pre_trained, args)
             if args.expand_dictionary:
                 logger.info('Expanding dictionary for new data...')
                 # Add words in training + dev examples
                 words = utils.load_words(args, train_exs + dev_exs)
                 added = model.expand_dictionary(words)
-                # Load pretrained embeddings for added words
+                # Load pre_trained embeddings for added words
                 if args.embedding_file:
                     model.load_embeddings(added, args.embedding_file)
 
@@ -477,6 +470,7 @@ def main(args):
     # TRAIN/VALID LOOP
     logger.info('-' * 100)
     logger.info('Starting training...')
+    torch.cuda.empty_cache()
     stats = {'timer': utils.Timer(), 'epoch': 0, 'best_valid': 0}
     for epoch in range(start_epoch, args.num_epochs):
         stats['epoch'] = epoch
@@ -510,6 +504,7 @@ if __name__ == '__main__':
         'DrKA Document Reader',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
+
     add_train_args(parser)
     config.add_model_args(parser)
     args = parser.parse_args()
