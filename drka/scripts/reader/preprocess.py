@@ -4,7 +4,7 @@
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
-"""Preprocess the SQuAD dataset for training."""
+"""Pre-process the SQuAD dataset for training."""
 
 import argparse
 import json
@@ -12,7 +12,7 @@ import os
 import sys
 import time
 from functools import partial
-from multiprocessing import Pool
+from multiprocessing import Pool, freeze_support
 from multiprocessing.util import Finalize
 
 from drka import tokenizers
@@ -53,17 +53,26 @@ def load_dataset(path):
     """Load json file and store fields separately."""
     with open(path) as f:
         data = json.load(f)['data']
-    output = {'qids': [], 'questions': [], 'answers': [],
-              'contexts': [], 'qid2cid': []}
+    output = {'qids': [], 'questions': [], 'answers': [], 'contexts': [], 'qid2cid': []}
     for article in data:
         for paragraph in article['paragraphs']:
+
             output['contexts'].append(paragraph['context'])
+
             for qa in paragraph['qas']:
-                output['qids'].append(qa['id'])
-                output['questions'].append(qa['question'])
-                output['qid2cid'].append(len(output['contexts']) - 1)
-                if 'answers' in qa:
-                    output['answers'].append(qa['answers'])
+
+                _id = qa['id']
+                _question = qa['question']
+                _contexts = len(output['contexts']) - 1
+                _answers = [answer for answer in qa['answers'] if answer["text"].strip()]
+
+                # SQUaD 2.0 format
+                if _question and _answers:
+                    output['qids'].append(_id)
+                    output['questions'].append(_question)
+                    output['qid2cid'].append(_contexts)
+                    output['answers'].append(_answers)
+
     return output
 
 
@@ -78,7 +87,7 @@ def find_answer(offsets, begin_offset, end_offset):
 
 
 def process_dataset(data, tokenizer, workers=None):
-    """Iterate processing (tokenize, parse, etc) dataset multithreaded."""
+    """Iterate processing (tokenize, parse, etc) dataset multi-threaded."""
     tokenizer_class = tokenizers.get_class(tokenizer)
     make_pool = partial(Pool, workers, initializer=init)
     workers = make_pool(initargs=(tokenizer_class, {'annotators': {'lemma'}}))
@@ -125,28 +134,32 @@ def process_dataset(data, tokenizer, workers=None):
 # -----------------------------------------------------------------------------
 # Commandline options
 # -----------------------------------------------------------------------------
+def run():
+    freeze_support()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('data_dir', type=str, help='Path to SQuAD data directory')
+    parser.add_argument('out_dir', type=str, help='Path to output file dir')
+    parser.add_argument('--split', type=str, help='Filename for train/dev split',
+                        default='SQuAD-v1.1-train')
+    parser.add_argument('--workers', type=int, default=None)
+    parser.add_argument('--tokenizer', type=str, default='spacy')
+    args = parser.parse_args()
+
+    t0 = time.time()
+
+    in_file = os.path.join(args.data_dir, args.split + '.json')
+    print('Loading dataset %s' % in_file, file=sys.stderr)
+    dataset = load_dataset(in_file)
+
+    out_file = os.path.join(
+        args.out_dir, '%s-processed-%s.txt' % (args.split, args.tokenizer)
+    )
+    print('Will write to file %s' % out_file, file=sys.stderr)
+    with open(out_file, 'w') as f:
+        for ex in process_dataset(dataset, args.tokenizer, args.workers):
+            f.write(json.dumps(ex) + '\n')
+    print('Total time: %.4f (s)' % (time.time() - t0))
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('data_dir', type=str, help='Path to SQuAD data directory')
-parser.add_argument('out_dir', type=str, help='Path to output file dir')
-parser.add_argument('--split', type=str, help='Filename for train/dev split',
-                    default='SQuAD-v1.1-train')
-parser.add_argument('--workers', type=int, default=None)
-parser.add_argument('--tokenizer', type=str, default='spacy')
-args = parser.parse_args()
-
-t0 = time.time()
-
-in_file = os.path.join(args.data_dir, args.split + '.json')
-print('Loading dataset %s' % in_file, file=sys.stderr)
-dataset = load_dataset(in_file)
-
-out_file = os.path.join(
-    args.out_dir, '%s-processed-%s.txt' % (args.split, args.tokenizer)
-)
-print('Will write to file %s' % out_file, file=sys.stderr)
-with open(out_file, 'w') as f:
-    for ex in process_dataset(dataset, args.tokenizer, args.workers):
-        f.write(json.dumps(ex) + '\n')
-print('Total time: %.4f (s)' % (time.time() - t0))
+if __name__ == '__main__':
+    run()
