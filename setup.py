@@ -18,7 +18,7 @@ with open('requirements.txt', errors='ignore') as f:
 
 setup(
     name='drka',
-    version='0.1.0-fdias.6',
+    version='0.2.0',
     description='Document Reader Knowledge Assistant',
     long_description=readme,
     license=_license,
