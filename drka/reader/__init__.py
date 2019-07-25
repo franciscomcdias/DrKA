@@ -6,9 +6,15 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
-from ..tokenizers import SpacyTokenizer
-from .. import DATA_DIR
 
+from drka import DATA_DIR
+from drka.tokenizers import SpacyTokenizer
+from . import config
+from . import data
+from . import utils
+from . import vector
+from .model import DocReader
+from .predictor import Predictor
 
 DEFAULTS = {
     'tokenizer': SpacyTokenizer,
@@ -19,10 +25,3 @@ DEFAULTS = {
 def set_default(key, value):
     global DEFAULTS
     DEFAULTS[key] = value
-
-from .model import DocReader
-from .predictor import Predictor
-from . import config
-from . import vector
-from . import data
-from . import utils
