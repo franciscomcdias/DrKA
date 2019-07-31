@@ -7,6 +7,7 @@
 """Rank documents with an ElasticSearch index"""
 
 import logging
+import re
 from functools import partial
 from multiprocessing.pool import ThreadPool
 
@@ -25,7 +26,7 @@ class ElasticDocRanker(BaseRanker):
     """
 
     def __init__(self, elastic_url=None, elastic_index=None, elastic_fields=None, elastic_field_doc_name=None,
-                 strict=True, elastic_field_content=None, auth=None):
+                 strict=True, elastic_field_content=None, elastic_field_metadata=None, auth=None):
         """
         Args:
             elastic_url: URL of the ElasticSearch server containing port
@@ -46,6 +47,7 @@ class ElasticDocRanker(BaseRanker):
         self.elastic_fields = elastic_fields
         self.elastic_field_doc_name = elastic_field_doc_name
         self.elastic_field_content = elastic_field_content
+        self.elastic_field_metadata = elastic_field_metadata
         self.strict = strict
         self.filter_most_relevant = True
 
@@ -91,6 +93,17 @@ class ElasticDocRanker(BaseRanker):
         doc_ids = [utils.get_field(row['_source'], self.elastic_field_doc_name) for row in hits]
         doc_scores = [row['_score'] for row in hits]
         return doc_ids, doc_scores, 0
+
+    def closest_vector(self, vector, k=1, tags="em", **kwargs):
+        results = self.es.search(index=self.elastic_index, body={
+            'size': k,
+            'query': {
+                "match_all": {}
+            }
+        })
+        for result in results['hits']['hits']:
+            print(type(result["_source"]["doc2vec"]))
+            print(type(vector))
 
     def closest_docs_text(self, query, k=1, tags="em", **kwargs):
         """Closest docs and content by using ElasticSearch
@@ -140,14 +153,22 @@ class ElasticDocRanker(BaseRanker):
 
     def get_doc_ids(self):
         """Fetch all ids of docs stored in the db."""
-        results = self.es.search(index=self.elastic_index, body={
-            "query": {"match_all": {}}})
-        doc_ids = [utils.get_field(result['_source'], self.elastic_field_doc_name) for result in
-                   results['hits']['hits']]
+        results = self.es.search(index=self.elastic_index, body={"query": {"match_all": {}}})
+        _hits = results['hits']['hits']
+        doc_ids = [utils.get_field(result['_source'], self.elastic_field_doc_name) for result in _hits]
         return doc_ids
 
     def get_doc_text(self, doc_id):
         """Fetch the raw text of the doc for 'doc_id'."""
         idx = self.get_doc_index(doc_id)
         result = self.es.get(index=self.elastic_index, doc_type='_doc', id=idx)
-        return result if result is None else result['_source'][self.elastic_field_content]
+
+        if result is not None:
+            _result = result['_source'][self.elastic_field_content]
+            # HACK: some extracted text does not contain sentences/blocks that end with period
+            #       this breaks the QA functionality and slows down the process
+            _result = _result.replace("\n \n", ".\n")
+            _result = re.sub(r'([^.][ \t]*)\n([ \t]*[A-Z])', r'\1.\n\2', _result)
+            ####
+
+        return _result
