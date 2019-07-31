@@ -6,6 +6,7 @@
 # LICENSE file in the root directory of this source tree.
 """Documents, in a sqlite database."""
 
+import json
 import sqlite3
 
 from drka.retriever import DEFAULTS
@@ -47,16 +48,23 @@ class DocDB(BaseRanker):
         cursor.close()
         return results
 
-    def get_page_numbers(self):
-        """Fetch all page numbers stored in the db."""
+    def get_doc_metadata(self, doc_id):
+        """
+        Fetch all metadata of docs stored in the db.
+        """
         cursor = self.connection.cursor()
-        cursor.execute("SELECT page_number FROM documents ORDER BY id")
-        results = [r[0] for r in cursor.fetchall()]
+        cursor.execute(
+            "SELECT metadata FROM documents WHERE id = ?",
+            (utils.normalize(doc_id),)
+        )
+        result = cursor.fetchone()
         cursor.close()
-        return results
+        return {} if result is None else json.loads(result[0])
 
     def get_doc_text(self, doc_id):
-        """Fetch the raw text of the doc for 'doc_id'."""
+        """
+        Fetch the raw text of the doc for 'doc_id'.
+        """
         cursor = self.connection.cursor()
         cursor.execute(
             "SELECT text FROM documents WHERE id = ?",

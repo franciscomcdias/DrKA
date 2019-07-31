@@ -28,13 +28,15 @@ class BaseRanker(object):
         """Fetch all ids of docs and stores them in the cache."""
         return list(self.cache.keys())
 
-    def get_page_numbers(self):
-        """Fetch all page numbers stored in the cache."""
-        return [0] * len(self.cache)
+    def get_doc_metadata(self, doc_id):
+        """Fetch all metadata stored in the cache."""
+        if doc_id in self.cache and "metadata" in self.cache[doc_id]:
+            return self.cache[doc_id]["metadata"]
+        return {}
 
     def get_doc_text(self, doc_id):
         """Fetch the raw text of the doc for 'doc_id'."""
-        if doc_id in self.cache:
+        if doc_id in self.cache and "text" in self.cache[doc_id]:
             return self.cache[doc_id]["text"]
         return ""
 

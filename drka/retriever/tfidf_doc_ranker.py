@@ -56,12 +56,14 @@ class TfidfDocRanker(BaseRanker):
         """Convert doc_index --> doc_id"""
         return self.doc_dict[1][doc_index]
 
-    def get_page_number(self, doc_index):
-        """Convert doc_index --> page_number"""
+    def get_doc_metadata(self, doc_index):
+        """
+        Fetch all metadata of the doc
+        """
         if len(self.doc_dict) >= 3:
             return self.doc_dict[2][doc_index]
         # provides retrofitting to the original models
-        return None
+        return {}
 
     def closest_docs(self, query, k=1, **kwargs):
         """Closest docs by dot product between query and documents
@@ -96,8 +98,7 @@ class TfidfDocRanker(BaseRanker):
     def parse(self, query):
         """Parse the query into tokens (either ngrams or tokens)."""
         tokens = self.tokenizer.tokenize(query)
-        return tokens.ngrams(n=self.ngrams, uncased=True,
-                             filter_fn=utils.filter_ngram)
+        return tokens.ngrams(n=self.ngrams, uncased=True, filter_fn=utils.filter_ngram)
 
     def text2spvec(self, query):
         """Create a sparse tfidf-weighted word vector from query.
