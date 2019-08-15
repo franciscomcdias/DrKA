@@ -8,6 +8,7 @@
 
 import logging
 import re
+from abc import abstractmethod
 from functools import partial
 from multiprocessing.pool import ThreadPool
 
@@ -25,8 +26,9 @@ class ElasticDocRanker(BaseRanker):
         Score pairs based on ElasticSearch
     """
 
-    def __init__(self, elastic_url=None, elastic_index=None, elastic_fields=None, elastic_field_doc_name=None,
-                 strict=True, elastic_field_content=None, elastic_field_metadata=None, auth=None):
+    def __init__(self, elastic_url=None, elastic_index=None, elastic_fields=None, elastic_fields_weights=None,
+                 elastic_field_doc_name=None, strict=True, elastic_field_content=None, elastic_field_metadata=None,
+                 auth=None):
         """
         Args:
             elastic_url: URL of the ElasticSearch server containing port
@@ -45,6 +47,7 @@ class ElasticDocRanker(BaseRanker):
         self.es = Elasticsearch(hosts=elastic_url, http_auth=auth) if auth else Elasticsearch(hosts=elastic_url)
         self.elastic_index = elastic_index
         self.elastic_fields = elastic_fields
+        self.elastic_fields_weights = elastic_fields_weights
         self.elastic_field_doc_name = elastic_field_doc_name
         self.elastic_field_content = elastic_field_content
         self.elastic_field_metadata = elastic_field_metadata
@@ -88,6 +91,7 @@ class ElasticDocRanker(BaseRanker):
                         'fields': self.elastic_fields}
                 }
         })
+
         hits = results['hits']['hits']
 
         doc_ids = [utils.get_field(row['_source'], self.elastic_field_doc_name) for row in hits]
@@ -105,12 +109,12 @@ class ElasticDocRanker(BaseRanker):
             print(type(result["_source"]["doc2vec"]))
             print(type(vector))
 
-    def closest_docs_text(self, query, k=1, tags="em", **kwargs):
+    def closest_docs_text(self, query, k=1, tags="em", visitor=None, **kwargs):
         """Closest docs and content by using ElasticSearch
         """
         del kwargs
 
-        results = self.es.search(index=self.elastic_index, body={
+        _body = {
             'size': k,
             'query': {
                 'multi_match': {
@@ -124,15 +128,19 @@ class ElasticDocRanker(BaseRanker):
                 "fields": {
                     self.elastic_field_content: {}
                 },
-                # TODO: Move these tags to the frontend
+                # TODO: Move these tags to the frontend or use a visitor
                 "pre_tags": "<" + tags + ">",
                 "post_tags": "</" + tags + ">"
             }
-        })
+        }
+        _body = visitor.process(self, query, k) if visitor else _body
 
-        hits_ = []
+        results = self.es.search(index=self.elastic_index, body=_body)
+
         if results and "hits" in results and "hits" in results['hits']:
             hits_ = results['hits']['hits']
+        else:
+            hits_ = []
 
         return {"answers": hits_}
 
@@ -172,3 +180,10 @@ class ElasticDocRanker(BaseRanker):
             ####
 
         return _result
+
+
+class ElasticVisitor:
+
+    @abstractmethod
+    def process(self, ranker: ElasticDocRanker, query: str, k: int):
+        pass
