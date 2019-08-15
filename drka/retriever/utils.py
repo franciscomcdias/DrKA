@@ -56,12 +56,12 @@ def normalize(text):
     return unicodedata.normalize('NFD', text)
 
 
-def filter_word(text):
-    """Take out english stopwords, punctuation, and compound endings."""
+def filter_word(text, language="en"):
+    """Take out stopwords, punctuation, and compound endings."""
     text = normalize(text)
     if regex.match(r'^\p{P}+$', text):
         return True
-    if text.lower() in get_stop_words('en'):
+    if text.lower() in get_stop_words(language):
         return True
     return False
 
