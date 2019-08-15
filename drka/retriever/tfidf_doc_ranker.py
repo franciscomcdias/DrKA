@@ -86,6 +86,9 @@ class TfidfDocRanker(BaseRanker):
 
         return doc_ids, doc_scores, page_numbers
 
+    def get_page_number(self, i):
+        return 0
+
     def batch_closest_docs(self, queries, k=1, num_workers=None):
         """Process a batch of closest_docs requests multithreaded.
         Note: we can use plain threads here as scipy is outside of the GIL.
