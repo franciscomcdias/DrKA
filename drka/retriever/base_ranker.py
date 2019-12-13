@@ -28,9 +28,9 @@ class BaseRanker(object):
         """Fetch all ids of docs and stores them in the cache."""
         return list(self.cache.keys())
 
-    def get_doc_metadata(self, doc_id):
+    def get_doc_metadata(self, doc_id=None):
         """Fetch all metadata stored in the cache."""
-        if doc_id in self.cache and "metadata" in self.cache[doc_id]:
+        if doc_id and doc_id in self.cache and "metadata" in self.cache[doc_id]:
             return self.cache[doc_id]["metadata"]
         return {}
 
@@ -102,11 +102,17 @@ class BaseRanker(object):
             if filter_most_relevant or self.filter_most_relevant:
                 matrix = []
 
-                for section in sections:
-                    v = vectorize(section["tokens"])
-                    result_vector = v.transform([query])[0]
-                    matrix.append(sum(result_vector.toarray()[0]))
-                max_occurrences = max(matrix)
+                try:
+                    for section in sections:
+                        try:
+                            v = vectorize(section["tokens"])
+                            result_vector = v.transform([query])[0]
+                            matrix.append(sum(result_vector.toarray()[0]))
+                        except ValueError:
+                            matrix.append(0)
+                    max_occurrences = max(matrix)
+                except ValueError:
+                    max_occurrences = 0
 
                 result = [entry for occ, entry in zip(matrix, sections) if occ == max_occurrences]
                 sections = result
