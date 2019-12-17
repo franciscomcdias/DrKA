@@ -100,14 +100,16 @@ class ElasticDocRanker(BaseRanker):
 
     def closest_vector(self, vector, k=1, tags="em", **kwargs):
         results = self.es.search(index=self.elastic_index, body={
-            'size': k,
             'query': {
                 "match_all": {}
             }
         })
+        vector = [float(entry) for entry in vector.replace("[", "").replace("]", "").split(",")]
         for result in results['hits']['hits']:
-            print(type(result["_source"]["doc2vec"]))
-            print(type(vector))
+            print(result["_source"]["doc2vec"])
+            print(vector)
+            print(type(result["_source"]["doc2vec"][0]))
+            print([sum(ai * bi for ai, bi in zip(a, b)) for a, b in zip(result["_source"]["doc2vec"], vector)])
 
     def closest_docs_text(self, query, k=1, tags="em", visitor=None, **kwargs):
         """Closest docs and content by using ElasticSearch
@@ -172,14 +174,22 @@ class ElasticDocRanker(BaseRanker):
         result = self.es.get(index=self.elastic_index, doc_type='_doc', id=idx)
 
         if result is not None:
-            _result = result['_source'][self.elastic_field_content]
+            text_result = result['_source'][self.elastic_field_content]
             # HACK: some extracted text does not contain sentences/blocks that end with period
             #       this breaks the QA functionality and slows down the process
-            _result = _result.replace("\n \n", ".\n")
-            _result = re.sub(r'([^.][ \t]*)\n([ \t]*[A-Z])', r'\1.\n\2', _result)
+            text_result = text_result.replace("\n \n", ".\n")
+            text_result = re.sub(r'([^.][ \t]*)\n([ \t]*[A-Z])', r'\1.\n\2', text_result)
+
+            text_result = re.sub(r'([a-z]+)\?([A-Z])', r'\1?\n\2', text_result)
+            text_result = text_result.replace(" ", "").replace(" ", "").replace(" ■", "; ")
+
+            if "title" in result['_source']:
+                text_result = result['_source']["title"].replace("-", " : ") + " " + text_result
+
+            text_result = text_result.replace("i.e. ", "such as ")
             ####
 
-        return _result
+        return text_result
 
 
 class ElasticVisitor:
