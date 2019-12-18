@@ -170,6 +170,11 @@ class ElasticDocRanker(BaseRanker):
 
     def get_doc_text(self, doc_id):
         """Fetch the raw text of the doc for 'doc_id'."""
+
+        def relevant(line):
+            line = re.sub(r'[^A-Za-z]+', r'', line)
+            return len(line) >= 6
+
         idx = self.get_doc_index(doc_id)
         result = self.es.get(index=self.elastic_index, doc_type='_doc', id=idx)
 
@@ -181,19 +186,16 @@ class ElasticDocRanker(BaseRanker):
             text_result = re.sub(r'([^.][ \t]*)\n([ \t]*[A-Z])', r'\1.\n\2', text_result)
 
             text_result = re.sub(r'([a-z]+)\?([A-Z])', r'\1?\n\2', text_result)
-            text_result = text_result.replace(" ", "").replace(" ", "").replace(" ■", "; ").replace("■", "")
+            text_result = text_result.replace(" ", "").replace(" ", "").replace(" ■", "; ").replace("■", "").replace(" ·", "")
 
             if "title" in result['_source']:
-                title = result['_source']["title"].strip()
-                if title not in text_result[:100]:
+                title = result['_source']["title"].replace(" –", " : ").strip()
+                if title.lower() not in text_result[:100].lower():
                     text_result = result['_source']["title"].replace("-", " : ") + ": " + text_result
 
             text_result = text_result.replace("i.e. ", "such as ")
 
-            text_result = "\n".join(line for line in text_result.split("\n") if ElasticDocRanker.relevant(line))
-
-            # print(doc_id)
-            # print(text_result)
+            text_result = "\n".join(line for line in text_result.split("\n") if relevant(line))
             ####
 
         return text_result
