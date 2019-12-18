@@ -181,12 +181,19 @@ class ElasticDocRanker(BaseRanker):
             text_result = re.sub(r'([^.][ \t]*)\n([ \t]*[A-Z])', r'\1.\n\2', text_result)
 
             text_result = re.sub(r'([a-z]+)\?([A-Z])', r'\1?\n\2', text_result)
-            text_result = text_result.replace(" ", "").replace(" ", "").replace(" ■", "; ")
+            text_result = text_result.replace(" ", "").replace(" ", "").replace(" ■", "; ").replace("■", "")
 
             if "title" in result['_source']:
-                text_result = result['_source']["title"].replace("-", " : ") + " " + text_result
+                title = result['_source']["title"].strip()
+                if title not in text_result[:100]:
+                    text_result = result['_source']["title"].replace("-", " : ") + ": " + text_result
 
             text_result = text_result.replace("i.e. ", "such as ")
+
+            text_result = "\n".join(line for line in text_result.split("\n") if ElasticDocRanker.relevant(line))
+
+            # print(doc_id)
+            # print(text_result)
             ####
 
         return text_result
