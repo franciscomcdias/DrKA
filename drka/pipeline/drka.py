@@ -150,7 +150,7 @@ class DrKA(object):
             self.num_workers = num_workers
 
         self.processes = ProcessPool(
-            num_workers,
+            self.num_workers,
             initializer=init,
             initargs=(tok_class, tok_opts, db_class, db_opts, fixed_candidates)
         )
@@ -240,6 +240,7 @@ class DrKA(object):
             ranked = self.ranker.batch_closest_docs(
                 queries, k=n_docs, num_workers=self.num_workers
             )
+
         all_doc_ids, all_doc_scores, all_page_numbers = zip(*ranked)
 
         # Flatten document ids and retrieve text from database.
@@ -252,6 +253,7 @@ class DrKA(object):
             doc_texts = [self.ranker.get_doc_text(flat_docid) for flat_docid in flat_doc_ids]
         else:
             doc_texts = self.processes.map(fetch_text, flat_doc_ids)
+
 
         # Split and flatten documents. Maintain a mapping from doc (index in
         # flat list) to split (index in flat list).

@@ -54,29 +54,50 @@ class BaseRanker(object):
                        )
             )
 
-        if doc and data and "window" in data:
 
-            # removes page numbers
-            doc = re.sub(r'[\n\r]+[ \t]*\d+[ \t]*[\n\r]+', '\n', doc)
-            # removes hyphens
-            doc = re.sub(r'-[\r]*\n', '', doc)
-            # removes new lines
-            doc = re.sub(r'[ \r\n]+', ' ', doc)
-            # EM dash
-            doc = doc.replace("\u2013", "-").replace("\u2014", "-")
-            # US double quotation
-            doc = doc.replace("\u201c", "").replace("\u201d", "")
-            # US fi character
-            doc = doc.replace("\ufb01", "fi")
-            # Ellipsis
-            doc = doc.replace("\u2026", "...")
-            # Vertical tab
-            doc = doc.replace("\x0b", ". ")
+        if doc and data and "window" in data:
+            if isinstance(doc, list):
+                # removes page numbers
+                doc = [re.sub(r'[\n\r]+[ \t]*\d+[ \t]*[\n\r]+', '\n', line) for line in doc]
+                # removes hyphens
+                doc = [re.sub(r'-[\r]*\n', '', line) for line in doc]
+                # removes new lines
+                doc = [re.sub(r'[ \r\n]+', ' ', line) for line in doc]
+                # EM dash
+                doc = [line.replace("\u2013", "-").replace("\u2014", "-") for line in doc]
+                # US double quotation
+                doc = [line.replace("\u201c", "").replace("\u201d", "") for line in doc]
+                # US fi character
+                doc = [line.replace("\ufb01", "fi") for line in doc]
+                # Ellipsis
+                doc = [line.replace("\u2026", "...") for line in doc]
+                # Vertical tab
+                doc = [line.replace("\x0b", ". ") for line in doc]
+
+                sentences = doc
+            else:
+                # removes page numbers
+                doc = re.sub(r'[\n\r]+[ \t]*\d+[ \t]*[\n\r]+', '\n', doc)
+                # removes hyphens
+                doc = re.sub(r'-[\r]*\n', '', doc)
+                # removes new lines
+                doc = re.sub(r'[ \r\n]+', ' ', doc)
+                # EM dash
+                doc = doc.replace("\u2013", "-").replace("\u2014", "-")
+                # US double quotation
+                doc = doc.replace("\u201c", "").replace("\u201d", "")
+                # US fi character
+                doc = doc.replace("\ufb01", "fi")
+                # Ellipsis
+                doc = doc.replace("\u2026", "...")
+                # Vertical tab
+                doc = doc.replace("\x0b", ". ")
+
+                sentences = nltk.sent_tokenize(doc, "english")
 
             sections = []
             current = {"text": [], "tokens": []}
-
-            for sentence in nltk.sent_tokenize(doc, "english"):
+            for sentence in sentences:
 
                 tokens = nltk.word_tokenize(sentence)
 
@@ -119,7 +140,5 @@ class BaseRanker(object):
 
             for section in sections:
                 yield section["text"]
-
         else:
-
             yield doc

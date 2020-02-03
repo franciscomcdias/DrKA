@@ -144,10 +144,11 @@ def set_defaults(args):
     args.log_file = os.path.join(args.model_dir, args.model_name + '.txt')
     args.model_file = os.path.join(args.model_dir, args.model_name + utils.SER_MODEL_EXTENSION)
 
+    # Commented for the shell nlp question answering module
     # Embeddings options
-    if args.embedding_dim:
-        raise RuntimeError('Either embedding_file or embedding_dim '
-                           'needs to be specified.')
+    #if args.embedding_dim:
+        #raise RuntimeError('Either embedding_file or embedding_dim '
+                           #'needs to be specified.')
 
     # Make sure tune_partial and fix_embeddings are consistent.
     if args.tune_partial > 0 and args.fix_embeddings:

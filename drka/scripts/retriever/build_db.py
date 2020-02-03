@@ -79,7 +79,11 @@ def get_contents(filename):
             if not doc:
                 continue
             # Add the document
-            documents.append((utils.normalize(doc['id']), doc['text'], doc['page_number']))
+            # Modified for shellai nlp question anwering module
+            if 'page_number' in doc.keys():
+                documents.append((utils.normalize(doc['id']), doc['text'], doc['page_number']))
+            else:
+                documents.append((utils.normalize(doc['id']), doc['text'], 0))
     return documents
 
 

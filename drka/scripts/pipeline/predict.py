@@ -29,6 +29,8 @@ parser.add_argument('dataset', type=str)
 parser.add_argument('--out-dir', type=str, default='/tmp',
                     help=("Directory to write prediction file to "
                           "(<dataset>-<model>-pipeline.preds)"))
+parser.add_argument('--pred-file', type=str, default='',
+                       help='Name for the predictions file (.preds)')
 parser.add_argument('--reader-model', type=str, default=None,
                     help="Path to trained Document Reader model")
 parser.add_argument('--retriever-model', type=str, default=None,
@@ -109,7 +111,7 @@ for line in open(args.dataset):
 
 model = os.path.splitext(os.path.basename(args.reader_model or 'default'))[0]
 basename = os.path.splitext(os.path.basename(args.dataset))[0]
-outfile = os.path.join(args.out_dir, basename + '-' + model + '-pipeline.preds')
+outfile = os.path.join(args.out_dir, args.pred_file) if args.pred_file != "" else os.path.join(args.out_dir, basename + '-' + model + '-pipeline.preds')
 
 logger.info('Writing results to %s' % outfile)
 with open(outfile, 'w') as f:

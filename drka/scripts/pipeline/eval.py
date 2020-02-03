@@ -23,7 +23,7 @@ def evaluate(dataset_file, prediction_file, regex=False):
     print('Predictions: %s' % prediction_file)
 
     answers = []
-    for line in open(args.dataset):
+    for line in open(dataset_file):
         data = json.loads(line)
         answer = [normalize(a) for a in data['answer']]
         answers.append(answer)
@@ -43,6 +43,7 @@ def evaluate(dataset_file, prediction_file, regex=False):
         )
     total = len(predictions)
     exact_match = 100.0 * exact_match / total
+
     print({'exact_match': exact_match})
 
 

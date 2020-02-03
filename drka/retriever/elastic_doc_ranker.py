@@ -8,6 +8,7 @@
 
 import logging
 import re
+import sys
 from abc import abstractmethod
 from functools import partial
 from multiprocessing.pool import ThreadPool
@@ -100,16 +101,14 @@ class ElasticDocRanker(BaseRanker):
 
     def closest_vector(self, vector, k=1, tags="em", **kwargs):
         results = self.es.search(index=self.elastic_index, body={
+            'size': k,
             'query': {
                 "match_all": {}
             }
         })
-        vector = [float(entry) for entry in vector.replace("[", "").replace("]", "").split(",")]
         for result in results['hits']['hits']:
-            print(result["_source"]["doc2vec"])
-            print(vector)
-            print(type(result["_source"]["doc2vec"][0]))
-            print([sum(ai * bi for ai, bi in zip(a, b)) for a, b in zip(result["_source"]["doc2vec"], vector)])
+            print(type(result["_source"]["doc2vec"]))
+            print(type(vector))
 
     def closest_docs_text(self, query, k=1, tags="em", visitor=None, **kwargs):
         """Closest docs and content by using ElasticSearch
@@ -120,9 +119,9 @@ class ElasticDocRanker(BaseRanker):
             'size': k,
             'query': {
                 'multi_match': {
-                    'query': query,
-                    'type': 'most_fields',
-                    'fields': self.elastic_fields,
+                    "query": query,
+                    "type": "best_fields",
+                    "tie_breaker": 0.3,
                     "slop": 1000
                 }
             },
@@ -143,6 +142,8 @@ class ElasticDocRanker(BaseRanker):
             hits_ = results['hits']['hits']
         else:
             hits_ = []
+
+        sys.stdout.flush()
 
         return {"answers": hits_}
 
@@ -170,35 +171,22 @@ class ElasticDocRanker(BaseRanker):
 
     def get_doc_text(self, doc_id):
         """Fetch the raw text of the doc for 'doc_id'."""
-
-        def relevant(line):
-            line = re.sub(r'[^A-Za-z]+', r'', line)
-            return len(line) >= 6
-
         idx = self.get_doc_index(doc_id)
         result = self.es.get(index=self.elastic_index, doc_type='_doc', id=idx)
 
         if result is not None:
-            text_result = result['_source'][self.elastic_field_content]
+            _result = result['_source'][self.elastic_field_content]
             # HACK: some extracted text does not contain sentences/blocks that end with period
             #       this breaks the QA functionality and slows down the process
-            text_result = text_result.replace("\n \n", ".\n")
-            text_result = re.sub(r'([^.][ \t]*)\n([ \t]*[A-Z])', r'\1.\n\2', text_result)
-
-            text_result = re.sub(r'([a-z]+)\?([A-Z])', r'\1?\n\2', text_result)
-            text_result = text_result.replace(" ", "").replace(" ", "").replace(" ■", "; ").replace("■", "").replace(" ·", "")
-
-            if "title" in result['_source']:
-                title = result['_source']["title"].replace(" –", " : ").strip()
-                if title.lower() not in text_result[:100].lower():
-                    text_result = result['_source']["title"].replace("-", " : ") + ": " + text_result
-
-            text_result = text_result.replace("i.e. ", "such as ")
-
-            text_result = "\n".join(line for line in text_result.split("\n") if relevant(line))
+            if isinstance(_result, list):
+                _result = [t.replace("\n \n", ".\n") for t in _result]
+                _result = [re.sub(r'([^.][ \t]*)\n([ \t]*[A-Z])', r'\1.\n\2', t) for t in _result]
+            else:
+                _result = _result.replace("\n \n", ".\n")
+                _result = re.sub(r'([^.][ \t]*)\n([ \t]*[A-Z])', r'\1.\n\2', _result)
             ####
 
-        return text_result
+        return _result
 
 
 class ElasticVisitor:
